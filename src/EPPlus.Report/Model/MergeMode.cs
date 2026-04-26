@@ -1,10 +1,27 @@
-namespace EPPlus.Report.Model
+namespace EPPlus.Report.Model;
+
+/// <summary>
+///     Defines how group labels should be merged during group rendering.
+/// </summary>
+public enum MergeMode
 {
-    public enum MergeMode
-    {
-        None,
-        Merge1,
-        Merge2,
-        Merge3
-    }
+    /// <summary>
+    ///     Group labels are not merged.
+    /// </summary>
+    None,
+
+    /// <summary>
+    ///     Merges group labels and clears duplicate cells.
+    /// </summary>
+    Merge1,
+
+    /// <summary>
+    ///     Merges group labels and clears duplicate cells (variant 2).
+    /// </summary>
+    Merge2,
+
+    /// <summary>
+    ///     Merges group labels without clearing duplicate cells.
+    /// </summary>
+    Merge3
 }

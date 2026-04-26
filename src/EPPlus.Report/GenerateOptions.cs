@@ -1,7 +1,12 @@
-namespace EPPlus.Report
+namespace EPPlus.Report;
+
+/// <summary>
+///     Specifies options that control the template generation process.
+/// </summary>
+public class GenerateOptions
 {
-    public class GenerateOptions
-    {
-        public bool EvaluateFormulas { get; set; } = false;
-    }
+    /// <summary>
+    ///     Gets or sets a value indicating whether formulas in the workbook should be evaluated after rendering.
+    /// </summary>
+    public bool EvaluateFormulas { get; set; } = false;
 }

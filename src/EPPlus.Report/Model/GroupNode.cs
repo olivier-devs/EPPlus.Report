@@ -1,11 +1,25 @@
 using System.Collections.Generic;
 
-namespace EPPlus.Report.Model
+namespace EPPlus.Report.Model;
+
+/// <summary>
+///     Represents a group directive such as <c>&lt;&lt;group Items by Category&gt;&gt;</c> with support for subtotals and
+///     grand totals.
+/// </summary>
+public class GroupNode : LoopNode
 {
-    public class GroupNode : LoopNode
-    {
-        public List<string> GroupByPaths { get; set; } = new List<string>();
-        public GroupOptions Options { get; set; } = new GroupOptions();
-        public List<TemplateNode> SubtotalTemplate { get; set; } = new List<TemplateNode>();
-    }
+    /// <summary>
+    ///     Gets or sets the property paths used to group items.
+    /// </summary>
+    public List<string> GroupByPaths { get; set; } = [];
+
+    /// <summary>
+    ///     Gets or sets the options controlling group rendering behavior.
+    /// </summary>
+    public GroupOptions Options { get; set; } = new();
+
+    /// <summary>
+    ///     Gets or sets the template nodes used to render subtotal and grand total rows.
+    /// </summary>
+    public List<TemplateNode> SubtotalTemplate { get; set; } = [];
 }
