@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>EPPlus.Report.Benchmarks</RootNamespace>
+    <AssemblyName>EPPlus.Report.Benchmarks</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageReference Include="EPPlus" Version="7.2.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EPPlus.Report\EPPlus.Report.csproj" />
+  </ItemGroup>
+</Project>
