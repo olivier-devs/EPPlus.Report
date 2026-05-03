@@ -562,10 +562,21 @@ Alternative aux boucles `<<foreach>>` utilisant les plages nommées Excel.
 
 ### Tags de la rangée de service
 
-| Tag | Description |
-|-----|-------------|
-| `<<sum>>` | Calcule et insère la somme des valeurs dans la colonne |
-| `<<count>>` | Calcule et insère le nombre de valeurs non vides dans la colonne |
+| Tag | Description | Fonction Excel |
+|-----|-------------|----------------|
+| `<<sum>>` | Calcule et insère la somme des valeurs dans la colonne | SUBTOTAL(9) - SUM |
+| `<<count>>` | Calcule et insère le nombre de valeurs non vides dans la colonne | SUBTOTAL(3) - COUNTA |
+| `<<avg>>` | Calcule et insère la moyenne des valeurs dans la colonne | SUBTOTAL(1) - AVERAGE |
+| `<<counta>>` | Alias de <<count>>, compte les valeurs non vides | SUBTOTAL(3) - COUNTA |
+| `<<max>>` | Calcule et insère la valeur maximale dans la colonne | SUBTOTAL(4) - MAX |
+| `<<min>>` | Calcule et insère la valeur minimale dans la colonne | SUBTOTAL(5) - MIN |
+| `<<product>>` | Calcule et insère le produit des valeurs dans la colonne | SUBTOTAL(6) - PRODUCT |
+| `<<stddev>>` | Calcule et insère l'écart-type (échantillon) | SUBTOTAL(7) - STDEV |
+| `<<stddevp>>` | Calcule et insère l'écart-type (population) | SUBTOTAL(8) - STDEVP |
+| `<<var>>` | Calcule et insère la variance (échantillon) | SUBTOTAL(10) - VAR |
+| `<<varp>>` | Calcule et insère la variance (population) | SUBTOTAL(11) - VARP |
+
+Tous les tags de service génèrent des formules `SUBTOTAL()` dynamiques qui se recalculent automatiquement lorsque les utilisateurs modifient les données dans Excel.
 
 ### Exemple
 

@@ -562,10 +562,21 @@ An alternative to `<<foreach>>` loops using Excel Named Ranges.
 
 ### Service row tags
 
-| Tag | Description |
-|-----|-------------|
-| `<<sum>>` | Calculates and inserts the sum of values in the column |
-| `<<count>>` | Calculates and inserts the count of non-empty values in the column |
+| Tag | Description | Excel Function |
+|-----|-------------|-----------------|
+| `<<sum>>` | Calculates and inserts the sum of values in the column | SUBTOTAL(9) - SUM |
+| `<<count>>` | Calculates and inserts the count of non-empty values in the column | SUBTOTAL(3) - COUNTA |
+| `<<avg>>` | Calculates and inserts the average of values in the column | SUBTOTAL(1) - AVERAGE |
+| `<<counta>>` | Alias for <<count>>, counts non-empty values | SUBTOTAL(3) - COUNTA |
+| `<<max>>` | Calculates and inserts the maximum value in the column | SUBTOTAL(4) - MAX |
+| `<<min>>` | Calculates and inserts the minimum value in the column | SUBTOTAL(5) - MIN |
+| `<<product>>` | Calculates and inserts the product of values in the column | SUBTOTAL(6) - PRODUCT |
+| `<<stddev>>` | Calculates and inserts the sample standard deviation | SUBTOTAL(7) - STDEV |
+| `<<stddevp>>` | Calculates and inserts the population standard deviation | SUBTOTAL(8) - STDEVP |
+| `<<var>>` | Calculates and inserts the sample variance | SUBTOTAL(10) - VAR |
+| `<<varp>>` | Calculates and inserts the population variance | SUBTOTAL(11) - VARP |
+
+All service tags generate dynamic `SUBTOTAL()` formulas that recalculate automatically when users modify data in Excel.
 
 ### Example
 
