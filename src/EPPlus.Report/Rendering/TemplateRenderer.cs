@@ -815,6 +815,9 @@ public class TemplateRenderer : ITemplateRenderer
             case "var":
                 cell.Formula = $"SUBTOTAL(10,{rangeAddress})";
                 break;
+            case "varp":
+                cell.Formula = $"SUBTOTAL(11,{rangeAddress})";
+                break;
         }
     }
 
