@@ -419,5 +419,36 @@ namespace EPPlus.Report.Tests
             package.Workbook.Calculate();
             Assert.Equal(10m, Convert.ToDecimal(sheet.Cells["A5"].Value));
         }
+
+        [Fact]
+        public void Render_NamedRangeWithProductTag_GeneratesSubtotal6()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            sheet.Cells["A1"].Value = "Amount";
+            sheet.Cells["A2"].Value = "{{item.Amount}}";
+            sheet.Cells["A3"].Value = "<<product>>";
+            sheet.Names.Add("Sales", sheet.Cells["A1:A3"]);
+
+            var parser = new TemplateParser();
+            var errors = new TemplateErrors();
+            var template = parser.Parse(sheet, errors);
+
+            var items = new[] { new { Amount = 2m }, new { Amount = 3m }, new { Amount = 4m } };
+
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            var context = new RenderContext
+            {
+                Current = null,
+                Variables = new System.Collections.Generic.Dictionary<string, object> { { "Sales", items } }
+            };
+            renderer.Render(template, context, sheet);
+
+            Assert.Equal("SUBTOTAL(6,A2:A4)", sheet.Cells["A5"].Formula);
+
+            package.Workbook.Calculate();
+            Assert.Equal(24m, Convert.ToDecimal(sheet.Cells["A5"].Value)); // 2*3*4=24
+        }
     }
 }

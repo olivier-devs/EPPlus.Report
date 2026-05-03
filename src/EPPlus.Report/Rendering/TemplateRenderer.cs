@@ -803,6 +803,9 @@ public class TemplateRenderer : ITemplateRenderer
             case "min":
                 cell.Formula = $"SUBTOTAL(5,{rangeAddress})";
                 break;
+            case "product":
+                cell.Formula = $"SUBTOTAL(6,{rangeAddress})";
+                break;
         }
     }
 
