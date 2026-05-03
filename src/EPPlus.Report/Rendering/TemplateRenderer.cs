@@ -791,6 +791,9 @@ public class TemplateRenderer : ITemplateRenderer
             case "count":
                 cell.Formula = $"SUBTOTAL(3,{rangeAddress})";
                 break;
+            case "counta":
+                cell.Formula = $"SUBTOTAL(3,{rangeAddress})";
+                break;
             case "avg":
                 cell.Formula = $"SUBTOTAL(1,{rangeAddress})";
                 break;
