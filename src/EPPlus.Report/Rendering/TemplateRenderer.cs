@@ -800,6 +800,9 @@ public class TemplateRenderer : ITemplateRenderer
             case "max":
                 cell.Formula = $"SUBTOTAL(4,{rangeAddress})";
                 break;
+            case "min":
+                cell.Formula = $"SUBTOTAL(5,{rangeAddress})";
+                break;
         }
     }
 
