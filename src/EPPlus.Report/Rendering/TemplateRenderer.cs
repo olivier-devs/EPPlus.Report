@@ -812,6 +812,9 @@ public class TemplateRenderer : ITemplateRenderer
             case "stddevp":
                 cell.Formula = $"SUBTOTAL(8,{rangeAddress})";
                 break;
+            case "var":
+                cell.Formula = $"SUBTOTAL(10,{rangeAddress})";
+                break;
         }
     }
 
