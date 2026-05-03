@@ -797,6 +797,9 @@ public class TemplateRenderer : ITemplateRenderer
             case "avg":
                 cell.Formula = $"SUBTOTAL(1,{rangeAddress})";
                 break;
+            case "max":
+                cell.Formula = $"SUBTOTAL(4,{rangeAddress})";
+                break;
         }
     }
 
