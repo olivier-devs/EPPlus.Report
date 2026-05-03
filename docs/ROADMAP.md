@@ -95,6 +95,18 @@ None currently.
 - **Target achieved:** >10,000 rows in <30s (actual: <0.3s for simple loops)
 - Note: `TemplateEngine` with `<<foreach>>` blocks has a parsing bug when loaded from file/stream; benchmarks use direct `TemplateParser`/`TemplateRenderer` for loop scenarios
 
+### Security Review (2026-05-03)
+
+#### Security Audit Complete
+- **Injection**: SAFE - Expression evaluation uses reflection with runtime type validation, no code execution
+- **XSS/CSRF**: NOT APPLICABLE - Library generates Excel files, not HTML
+- **Authentication**: NOT APPLICABLE - Server-side templating library
+- **Secrets Management**: SAFE - No hardcoded secrets, no sensitive data logging
+- **Input Validation**: ADEQUATE - Null checks, empty string validation, regex patterns safe (no ReDoS)
+- **Logging**: SAFE - Errors collected in `TemplateErrors`, no sensitive data exposure
+
+**Verdict**: APPROVED - No critical vulnerabilities found
+
 ### Backlog
 
 - [ ] Pivot tables support (beyond EPPlus auto-adjustment)

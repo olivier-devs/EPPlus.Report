@@ -6,13 +6,13 @@ Référence complète de l'API publique.
 
 ## `TemplateEngine`
 
-Point d'entr�e principal pour la g�n�ration Excel bas�e sur des templates. Inspir� par ClosedXML.Report.
+Point d'entrée principal pour la génération Excel basée sur des templates. Inspiré par ClosedXML.Report.
 
 ### Constructeurs
 
 #### `TemplateEngine(string templatePath)`
 
-Crée un nouveau moteur � partir d'un fichier template Excel sur disque.
+Crée un nouveau moteur à partir d'un fichier template Excel sur disque.
 
 **Paramètres :**
 - `templatePath` (`string`) : Chemin vers le fichier template `.xlsx`.
@@ -22,7 +22,7 @@ Crée un nouveau moteur � partir d'un fichier template Excel sur disque.
 
 #### `TemplateEngine(Stream stream)`
 
-Crée un nouveau moteur � partir d'un stream contenant un classeur Excel.
+Crée un nouveau moteur à partir d'un stream contenant un classeur Excel.
 
 **Paramètres :**
 - `stream` (`Stream`) : Stream lisible contenant un fichier `.xlsx` valide.
@@ -32,18 +32,18 @@ Crée un nouveau moteur � partir d'un stream contenant un classeur Excel.
 
 ---
 
-### M�thodes
+### Méthodes
 
 #### `AddVariable(object value)`
 
-Définit l'objet de contexte racine. Utilisé quand une expression ne correspond � aucune variable nommée.
+Définit l'objet de contexte racine. Utilisé quand une expression ne correspond à aucune variable nommée.
 
 **Paramètres :**
 - `value` (`object`) : L'objet de données racine.
 
 #### `AddVariable(string name, object value)`
 
-Ajoute une variable nomm�e accessible dans les templates via `{{Name}}`.
+Ajoute une variable nommée accessible dans les templates via `{{Name}}`.
 
 **Paramètres :**
 - `name` (`string`) : Nom de la variable utilisé dans les templates.
@@ -52,7 +52,7 @@ Ajoute une variable nomm�e accessible dans les templates via `{{Name}}`.
 **Exceptions :**
 - `ArgumentException` : Si `name` est null, vide, ou constitué uniquement d'espaces.
 
-**Priorité de résolution :** Les variables nommées sont résolues en premier. Si aucune variable nomm�e ne correspond � une expression, le contexte racine (`AddVariable(object)`) est utilisé comme fallback.
+**Priorité de résolution :** Les variables nommées sont résolues en premier. Si aucune variable nommée ne correspond à une expression, le contexte racine (`AddVariable(object)`) est utilisé comme fallback.
 
 #### `Generate()`
 
@@ -62,12 +62,12 @@ Parse toutes les feuilles, effectue le rendu du template, et retourne le résult
 
 **Comportement :**
 - Modifie le `ExcelPackage` interne en mémoire.
-- N'�crit pas sur le disque.
-- Les formules ne sont pas évaluées (laissées � Excel � l'ouverture).
+- N'écrit pas sur le disque.
+- Les formules ne sont pas évaluées (laissées à Excel à l'ouverture).
 
 #### `Generate(GenerateOptions options)`
 
-Effectue le rendu du template avec des options suppl�mentaires.
+Effectue le rendu du template avec des options supplémentaires.
 
 **Paramètres :**
 - `options` (`GenerateOptions`) : Options de génération.
@@ -76,14 +76,14 @@ Effectue le rendu du template avec des options suppl�mentaires.
 
 #### `RegisterFunction(string name, Func<object, object> func)`
 
-Enregistre une fonction personnalis�e utilisable dans les expressions template.
+Enregistre une fonction personnalisée utilisable dans les expressions template.
 
 **Paramètres :**
-- `name` (`string`) : Nom de la fonction utilis�e dans les templates.
-- `func` (`Func<object, object>`) : Impl�mentation de la fonction.
+- `name` (`string`) : Nom de la fonction utilisée dans les templates.
+- `func` (`Func<object, object>`) : Implémentation de la fonction.
 
 **Exceptions :**
-- `ArgumentException` : Si `name` est null, vide, ou constitu� uniquement d'espaces.
+- `ArgumentException` : Si `name` est null, vide, ou constitué uniquement d'espaces.
 - `ArgumentNullException` : Si `func` est null.
 
 **Exemple :**
@@ -92,18 +92,18 @@ engine.RegisterFunction("Double", x => x?.ToString() + x?.ToString());
 // Template : {{Double(Name)}}
 ```
 
-**Fonctions int�gr�es :** `Upper`, `Lower`, `Trim`.
+**Fonctions intégrées :** `Upper`, `Lower`, `Trim`.
 
 ---
 
-### M�thodes de sauvegarde
+### Méthodes de sauvegarde
 
 #### `Save()`
 
 écrase le fichier template original.
 
 **Exceptions :**
-- `InvalidOperationException` : Si le moteur a �t� créé � partir d'un stream (aucun chemin d'origine n'existe).
+- `InvalidOperationException` : Si le moteur a été créé à partir d'un stream (aucun chemin d'origine n'existe).
 
 #### `SaveAs(string path)`
 
@@ -121,7 +121,7 @@ Sauvegarde en utilisant un `FileInfo`.
 
 #### `SaveAs(Stream stream)`
 
-�crit le classeur dans un stream.
+écrit le classeur dans un stream.
 
 **Paramètres :**
 - `stream` (`Stream`) : Stream writable.
@@ -140,60 +140,60 @@ Sauvegarde en utilisant `FileInfo` avec des options.
 
 #### `SaveAs(Stream stream, SaveOptions saveOptions)`
 
-�crit dans un stream avec des options.
+écrit dans un stream avec des options.
 
 ---
 
 ## `TemplateGenerateResult`
 
-Objet de r�sultat retourn� par `TemplateEngine.Generate()`.
+Objet de résultat retourné par `TemplateEngine.Generate()`.
 
-### Propri�t�s
+### Propriétés
 
 #### `HasErrors` (get)
 
-`bool` - `true` si au moins une erreur a �t� collect�e pendant le parsing ou le rendu.
+`bool` - `true` si au moins une erreur a été collectée pendant le parsing ou le rendu.
 
 #### `HasWarnings` (get)
 
-`bool` - `true` si au moins un avertissement non bloquant a �t� collect� pendant le rendu.
+`bool` - `true` si au moins un avertissement non bloquant a été collecté pendant le rendu.
 
 #### `ParsingErrors` (get)
 
-`TemplateErrors` - Collection des erreurs de parsing (ex: blocs non ferm�s). Vide si aucune erreur.
+`TemplateErrors` - Collection des erreurs de parsing (ex: blocs non fermés). Vide si aucune erreur.
 
 #### `RenderingErrors` (get)
 
-`TemplateErrors` - Collection des erreurs de rendu (ex: �chec d'�valuation de formule). Vide si aucune erreur.
+`TemplateErrors` - Collection des erreurs de rendu (ex: échec d'évaluation de formule). Vide si aucune erreur.
 
 #### `Warnings` (get)
 
-`TemplateErrors` - Collection des avertissements non bloquants (ex: propri�t�s manquantes). Le rendu continue. Vide si aucun avertissement.
+`TemplateErrors` - Collection des avertissements non bloquants (ex: propriétés manquantes). Le rendu continue. Vide si aucun avertissement.
 
 ---
 
 ## `TemplateErrors`
 
-H�rite de `List<TemplateError>`. Collection d'erreurs de template.
+Hérite de `List<TemplateError>`. Collection d'erreurs de template.
 
 ---
 
 ## `TemplateError`
 
-Repr�sente une erreur unique rencontr�e pendant le traitement du template.
+Représente une erreur unique rencontrée pendant le traitement du template.
 
-### Propri�t�s
+### Propriétés
 
-| Propri�t� | Type | Description |
+| Propriété | Type | Description |
 |-----------|------|-------------|
 | `Message` | `string` | Description lisible de l'erreur. |
 | `CellAddress` | `string` | Adresse de cellule Excel (ex: `"A5"`). |
-| `WorksheetName` | `string` | Nom de la feuille o� l'erreur s'est produite. |
-| `Row` | `int` | Num�ro de ligne (1-based). |
-| `Column` | `int` | Num�ro de colonne (1-based). |
-| `Expression` | `string` | L'expression template qui a caus� l'erreur. |
-| `Location` | `string` | Emplacement combin� : `WorksheetName!CellAddress`. |
-| `Type` | `ErrorType` | Cat�gorie de l'erreur : `Parsing`, `Evaluation`, `Rendering` ou `Warning`. |
+| `WorksheetName` | `string` | Nom de la feuille où l'erreur s'est produite. |
+| `Row` | `int` | Numéro de ligne (1-based). |
+| `Column` | `int` | Numéro de colonne (1-based). |
+| `Expression` | `string` | L'expression template qui a causé l'erreur. |
+| `Location` | `string` | Emplacement combiné : `WorksheetName!CellAddress`. |
+| `Type` | `ErrorType` | Catégorie de l'erreur : `Parsing`, `Evaluation`, `Rendering` ou `Warning`. |
 
 ---
 
@@ -202,10 +202,10 @@ Repr�sente une erreur unique rencontr�e pendant le traitement du template.
 ```csharp
 public enum ErrorType
 {
-    Parsing,     // Erreurs de syntaxe template (blocs non ferm�s, etc.)
-    Evaluation,  // Erreurs d'�valuation d'expression (fatales)
+    Parsing,     // Erreurs de syntaxe template (blocs non fermés, etc.)
+    Evaluation,  // Erreurs d'évaluation d'expression (fatales)
     Rendering,   // Erreurs Excel pendant le rendu
-    Warning      // Probl�mes non bloquants (ex: propri�t�s manquantes)
+    Warning      // Problèmes non bloquants (ex: propriétés manquantes)
 }
 ```
 
@@ -215,9 +215,9 @@ public enum ErrorType
 
 Options pour `TemplateEngine.Generate(GenerateOptions)`.
 
-### Propri�t�s
+### Propriétés
 
-| Propri�t� | Type | Défaut | Description |
+| Propriété | Type | Défaut | Description |
 |-----------|------|--------|-------------|
 | `EvaluateFormulas` | `bool` | `false` | Si `true`, évalue toutes les formules Excel après le rendu via `package.Workbook.Calculate()`. |
 
@@ -227,23 +227,23 @@ Options pour `TemplateEngine.Generate(GenerateOptions)`.
 
 Options pour les opérations de sauvegarde.
 
-### Propri�t�s
+### Propriétés
 
-| Propri�t� | Type | Défaut | Description |
+| Propriété | Type | Défaut | Description |
 |-----------|------|--------|-------------|
 | `EvaluateFormulasBeforeSave` | `bool` | `false` | Si `true`, évalue les formules juste avant l'écriture sur disque/stream. |
 
-> **Note :** Si `GenerateOptions.EvaluateFormulas` �tait déjà `true`, les formules ne sont pas r�évaluées pendant la sauvegarde.
+> **Note :** Si `GenerateOptions.EvaluateFormulas` était déjà `true`, les formules ne sont pas réévaluées pendant la sauvegarde.
 
 ---
 
 ## `RenderContext` (Avancé)
 
-Pass� en interne au renderer. Disponible pour un usage avanc�.
+Passé en interne au renderer. Disponible pour un usage avancé.
 
-### Propri�t�s
+### Propriétés
 
-| Propri�t� | Type | Description |
+| Propriété | Type | Description |
 |-----------|------|-------------|
 | `Current` | `object` | Contexte de données courant (racine ou élément de boucle). |
 | `Variables` | `Dictionary<string, object>` | Dictionnaire de variables nommées. |
