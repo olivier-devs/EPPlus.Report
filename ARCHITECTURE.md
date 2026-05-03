@@ -29,20 +29,41 @@ TemplateNode (abstract)
 │   └── Contenu statique
 │
 ├── ExpressionNode
-│   └── ExpressionPath : chemin de propriété (ex: "Object.Property")
+│   ├── ExpressionPath : chemin de propriété (ex: "Object.Property")
+│   └── FunctionName : nom de fonction optionnel (ex: "Upper")
 │
 ├── LoopNode
 │   ├── CollectionName : nom de la collection
-│   └── Children : nœuds dans la boucle
+│   ├── Children : nœuds dans la boucle
+│   ├── EndRow : ligne de fin du bloc
+│   └── ConditionalFormattingRules : règles CF associées
 │
 ├── IfNode
 │   ├── ConditionExpression : expression booléenne
-│   └── Children : nœuds conditionnels
+│   ├── Children : nœuds conditionnels
+│   ├── EndRow : ligne de fin du bloc
+│   └── ConditionalFormattingRules : règles CF associées
 │
-└── GroupNode (Phase 6)
-    ├── CollectionName
-    ├── GroupByProperty
-    └── Children
+├── GroupNode (hérite de LoopNode)
+│   ├── CollectionName : nom de la collection (hérité)
+│   ├── GroupByPaths : liste de chemins de propriété (ex: ["Category"])
+│   ├── Options : GroupOptions (MergeLabels, DisableSubtotals, etc.)
+│   ├── SubtotalTemplate : nœuds template du sous-total
+│   └── Children : nœuds dans le groupe (hérité)
+│
+├── NamedRangeLoopNode (hérite de LoopNode)
+│   ├── RangeName : nom de la plage nommée Excel
+│   ├── IsHorizontal : itération horizontale
+│   ├── ServiceRowCount : nombre de rangées de service
+│   ├── ServiceTags : tags de service (sum, count)
+│   ├── HeaderRowCount : nombre de rangées d'en-tête
+│   ├── EndColumn : colonne de fin
+│   ├── GroupByDefinitions : critères de groupement
+│   └── RangeGroupOptions : options de groupe spécifiques
+│
+└── AggregationNode
+    ├── AggregationType : type ("sum" ou "count")
+    └── PropertyName : propriété ou collection à agréger
 ```
 
 **Classes supplémentaires** :
@@ -56,10 +77,14 @@ TemplateNode (abstract)
 **Algorithme** :
 1. Itérer sur toutes les cellules du worksheet (`Dimension`)
 2. Détecter les directives par regex :
-   - `\{\{(.+?)\}\}` → ExpressionNode
+   - `\{\{(.+?)\}\}` → ExpressionNode (ou ExpressionNode avec FunctionName si fonction)
+   - `\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*([A-Za-z_][A-Za-z0-9_\.]*)\s*\)\s*\}\}` → ExpressionNode avec FunctionName
    - `<<foreach\s+(\w+)>>` → LoopNode (mode bloc)
    - `<<if\s+(\w+)>>` → IfNode (mode bloc)
-3. Pour les blocs (foreach/if), parser récursivement les enfants jusqu'à la balise de fermeture
+   - `<<group\s+(\w+)\s+by\s+(.+?)>>` → GroupNode (mode bloc)
+   - `<<sum\s+(\w+)>>` → AggregationNode (type "sum")
+   - `<<count\s+(\w+)>>` → AggregationNode (type "count")
+3. Pour les blocs (foreach/if/group), parser récursivement les enfants jusqu'à la balise de fermeture
 
 **Gestion du nesting** :
 - Utiliser une **pile** (stack) pour suivre les blocs ouverts
@@ -79,7 +104,7 @@ object Evaluate(string expression, object context);
 - `context` : objet racine (le modèle de données)
 - Découper l'expression par `.`
 - Résoudre chaque propriété via `Type.GetProperty()`
-- **Cache** : Dictionnaire `Dictionary<string, PropertyInfo[]>` pour éviter de recompiler la même expression
+- **Cache** : `ConcurrentDictionary<string, PropertyInfo[]>` pour éviter de recompiler la même expression (thread-safe)
 
 **Exemple** :
 ```csharp
@@ -94,7 +119,7 @@ object Evaluate(string expression, object context);
 
 **Interface** :
 ```csharp
-void Render(Template template, object data, ExcelWorksheet worksheet);
+void Render(Template template, RenderContext context, ExcelWorksheet worksheet);
 ```
 
 **Stratégie de rendu** :
@@ -126,16 +151,17 @@ void Render(Template template, object data, ExcelWorksheet worksheet);
 
 ```
 Données C# (objet anonyme / POCO)
-           ↓
-    TemplateEngine.Render(data)
-           ↓
-    ┌─────────────────┐
-    │ 1. Parse()      │ → AST
-    │ 2. Evaluate()   │ → Valeurs
-    │ 3. Render()     │ → Excel modifié
-    └─────────────────┘
-           ↓
-    Fichier .xlsx généré
+            ↓
+     TemplateEngine.AddVariable(data)
+     TemplateEngine.Generate()
+            ↓
+     ┌─────────────────┐
+     │ 1. Parse()      │ → AST
+     │ 2. Evaluate()   │ → Valeurs
+     │ 3. Render()     │ → Excel modifié
+     └─────────────────┘
+            ↓
+     Fichier .xlsx généré (via Save / SaveAs)
 ```
 
 ## Points d'extension

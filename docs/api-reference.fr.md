@@ -248,6 +248,8 @@ Passé en interne au renderer. Disponible pour un usage avancé.
 | `Current` | `object` | Contexte de données courant (racine ou élément de boucle). |
 | `Variables` | `Dictionary<string, object>` | Dictionnaire de variables nommées. |
 | `CurrentCollection` | `IEnumerable` | Contexte de collection courant pour les agrégations. |
+| `IsNamedRangeLoop` | `bool` | Indique si le contexte courant est à l'intérieur d'une boucle de plage nommée. |
+| `CurrentIndex` | `int` | Index 0-based de l'élément courant dans la collection. |
 
 ---
 
@@ -279,6 +281,183 @@ public interface IExpressionEvaluator
     object Evaluate(string expression, object context);
 }
 ```
+
+---
+
+## `ExpressionEvaluator` (Avancé)
+
+Implémentation par défaut de `IExpressionEvaluator`. Résout les chemins de propriétés via reflection avec mise en cache.
+
+### Constructeurs
+
+#### `ExpressionEvaluator()`
+
+Initialise avec les fonctions intégrées : `Upper`, `Lower`, `Trim`.
+
+### Méthodes
+
+#### `Evaluate(string expression, object context)`
+
+Évalue un chemin de propriété par rapport à l'objet contexte.
+
+#### `Evaluate(string expression, object context, string functionName)`
+
+Évalue un chemin de propriété et applique la fonction nommée au résultat.
+
+#### `RegisterFunction(string name, Func<object, object> func)`
+
+Enregistre une fonction personnalisée par nom.
+
+#### `ApplyFunction(string functionName, object value)`
+
+Applique une fonction enregistrée à une valeur.
+
+---
+
+## Classes du Modèle (Avancé)
+
+### `TemplateNode` (abstract)
+
+Classe de base pour tous les nœuds AST du template.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `Row` | `int` | Numéro de ligne dans la feuille. |
+| `Column` | `int` | Numéro de colonne dans la feuille. |
+| `RawContent` | `string` | Contenu texte brut de la cellule. |
+
+### `ExpressionNode`
+
+Représente une expression template `{{Property}}` ou `{{Function(Property)}}`.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `ExpressionPath` | `string` | Chemin de propriété à évaluer (ex: `"Object.Property"`). |
+| `FunctionName` | `string` | Nom de fonction optionnel à appliquer (ex: `"Upper"`). |
+
+### `LoopNode`
+
+Représente un bloc `<<foreach Items>>`.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `CollectionName` | `string` | Nom de la collection à itérer. |
+| `Children` | `List<TemplateNode>` | Nœuds enfants dans le bloc de boucle. |
+| `EndRow` | `int` | Ligne où se termine le bloc de boucle. |
+| `ConditionalFormattingRules` | `List<ConditionalFormattingRule>` | Règles de mise en forme conditionnelle associées à ce bloc. |
+
+### `IfNode`
+
+Représente un bloc `<<if Condition>>`.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `ConditionExpression` | `string` | Expression booléenne à évaluer. |
+| `Children` | `List<TemplateNode>` | Nœuds enfants dans le bloc conditionnel. |
+| `EndRow` | `int` | Ligne où se termine le bloc conditionnel. |
+| `ConditionalFormattingRules` | `List<ConditionalFormattingRule>` | Règles de mise en forme conditionnelle associées à ce bloc. |
+
+### `GroupNode`
+
+Représente un bloc `<<group Items by Category>>`. Hérite de `LoopNode`.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `GroupByPaths` | `List<string>` | Chemins de propriétés utilisés pour grouper les éléments. |
+| `Options` | `GroupOptions` | Options contrôlant le rendu du groupement. |
+| `SubtotalTemplate` | `List<TemplateNode>` | Nœuds template pour les rangées de sous-total. |
+
+### `NamedRangeLoopNode`
+
+Représente une boucle dérivée d'une plage nommée Excel. Hérite de `LoopNode`.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `RangeName` | `string` | Nom de la plage nommée Excel. |
+| `IsHorizontal` | `bool` | Indique si la boucle itère horizontalement. |
+| `ServiceRowCount` | `int` | Nombre de rangées de service à la fin. |
+| `ServiceTags` | `List<ServiceTag>` | Tags de service (sum, count) dans la rangée de service. |
+| `EndColumn` | `int` | Colonne où se termine la plage nommée. |
+| `HeaderRowCount` | `int` | Nombre de rangées d'en-tête au début. |
+| `GroupByDefinitions` | `List<GroupByDefinition>` | Définitions de groupement pour la plage nommée. |
+| `RangeGroupOptions` | `GroupOptions` | Options de groupement spécifiques à la plage nommée. |
+
+### `AggregationNode`
+
+Représente `<<sum Property>>` ou `<<count Items>>`.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `AggregationType` | `string` | Type d'agrégation (`"sum"` ou `"count"`). |
+| `PropertyName` | `string` | Nom de propriété ou de collection à agréger. |
+
+### `GroupOptions`
+
+Options pour contrôler le comportement du rendu des groupes.
+
+| Propriété | Type | Défaut | Description |
+|-----------|------|--------|-------------|
+| `Collapse` | `bool` | `false` | Si les rangées groupées doivent être collapseées. |
+| `MergeLabels` | `MergeMode` | `None` | Comment fusionner les cellules de label de groupe. |
+| `PlaceToColumn` | `int` | `0` | Index de colonne pour les labels de groupe. |
+| `WithHeader` | `bool` | `false` | Si le groupe inclut un en-tête. |
+| `DisableSubtotals` | `bool` | `false` | Si les rangées de sous-total doivent être désactivées. |
+| `DisableOutline` | `bool` | `false` | Si le contour du groupe doit être désactivé. |
+| `PageBreaks` | `bool` | `false` | Si des sauts de page doivent être insérés entre les groupes. |
+| `TotalLabel` | `string` | `"Total"` | Texte de label pour les rangées de total. |
+| `GrandLabel` | `string` | `"Grand"` | Texte de label pour les rangées de total général. |
+| `SummaryAbove` | `bool` | `false` | Si les rangées résumé apparaissent au-dessus des détails. |
+| `DisableGrandTotal` | `bool` | `false` | Si la rangée de total général doit être désactivée. |
+| `Descending` | `bool` | `false` | Si les groupes doivent être triés en ordre décroissant. |
+
+### `MergeMode`
+
+Définit comment les labels de groupe doivent être fusionnés.
+
+| Valeur | Description |
+|-------|-------------|
+| `None` | Les labels de groupe ne sont pas fusionnés. |
+| `Merge1` | Fusionne les labels de groupe et efface les cellules dupliquées. |
+| `Merge2` | Fusionne les labels de groupe et efface les cellules dupliquées (variante 2). |
+| `Merge3` | Fusionne les labels de groupe sans effacer les cellules dupliquées. |
+
+### `GroupByDefinition`
+
+Définit un critère de groupement pour les boucles de plages nommées.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `PropertyPath` | `string` | Chemin de propriété utilisé pour extraire les clés de groupe. |
+| `Column` | `int` | Index de colonne où la clé de groupe est située. |
+| `Descending` | `bool` | Si le groupe doit être trié en ordre décroissant. |
+| `Options` | `GroupOptions` | Options contrôlant le rendu de ce groupe. |
+
+### `ServiceTag`
+
+Représente un tag de service dans une plage nommée (ex: `<<sum>>`).
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `TagName` | `string` | Nom du tag (ex: `"sum"` ou `"count"`). |
+| `Row` | `int` | Ligne où le tag est situé. |
+| `Column` | `int` | Colonne où le tag est situé. |
+
+### `ConditionalFormattingRule`
+
+Représente une règle de mise en forme conditionnelle extraite d'un bloc template.
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `Address` | `string` | Plage d'adresses de cellules. |
+| `Formula` | `string` | Formule principale. |
+| `Formula2` | `string` | Formule secondaire (pour les règles nécessitant deux formules). |
+| `Type` | `eExcelConditionalFormattingRuleType` | Type de règle de mise en forme conditionnelle. |
+| `Priority` | `int` | Priorité de la règle. |
+| `StopIfTrue` | `bool` | Si l'évaluation doit s'arrêter si cette règle est vraie. |
+
+### `PropertyNotFoundException`
+
+Exception levée lorsqu'une propriété référencée dans une expression template est introuvable. Hérite de `ArgumentException`.
 
 ---
 
@@ -338,6 +517,7 @@ Groupe une collection par une ou plusieurs propriétés, avec sous-totaux et tot
 ```
 
 **Options :**
+- Suffixe `asc` pour le tri explicite ascendant : `<<group Items by Category asc>>`
 - Suffixe `desc` pour le tri décroissant : `<<group Items by Category desc>>`
 - `MergeLabels` fusionne les cellules de clé de groupe verticalement
 - La rangée de template de sous-total (dernière ligne avec seulement des nœuds d'agrégation) est auto-détectée
@@ -384,8 +564,8 @@ Alternative aux boucles `<<foreach>>` utilisant les plages nommées Excel.
 
 | Tag | Description |
 |-----|-------------|
-| `<<sum>>` | Insère une formule `=SUBTOTAL(9, ...)` pour la colonne |
-| `<<count>>` | Insère une formule `=SUBTOTAL(3, ...)` pour la colonne |
+| `<<sum>>` | Calcule et insère la somme des valeurs dans la colonne |
+| `<<count>>` | Calcule et insère le nombre de valeurs non vides dans la colonne |
 
 ### Exemple
 

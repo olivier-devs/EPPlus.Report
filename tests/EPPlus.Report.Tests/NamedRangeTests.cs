@@ -51,6 +51,7 @@ namespace EPPlus.Report.Tests
                     engine.SaveAs(outputFile);
                     using var outPackage = new ExcelPackage(new FileInfo(outputFile));
                     var outSheet = outPackage.Workbook.Worksheets[0];
+                    outPackage.Workbook.Calculate();
                     Assert.Equal(100d, Convert.ToDouble(outSheet.Cells["A2"].Value));
                     Assert.Equal(50m, Convert.ToDecimal(outSheet.Cells["B2"].Value));
                     Assert.Equal(101d, Convert.ToDouble(outSheet.Cells["A3"].Value));
@@ -188,9 +189,111 @@ namespace EPPlus.Report.Tests
             Assert.Equal(10m, sheet.Cells["A2"].Value);
             Assert.Equal(20m, sheet.Cells["A3"].Value);
             Assert.Equal(30m, sheet.Cells["A4"].Value);
-            
-            // Verify service row has a formula (it may be cached as value by EPPlus)
-            Assert.NotNull(sheet.Cells["A5"].Value);
+
+            // Verify service row has SUBTOTAL formula
+            Assert.Equal("SUBTOTAL(9,A2:A4)", sheet.Cells["A5"].Formula);
+
+            package.Workbook.Calculate();
+            Assert.Equal(60m, Convert.ToDecimal(sheet.Cells["A5"].Value));
+        }
+
+        [Fact]
+        public void Render_NamedRangeWithSumTag_InsertsSubtotal9Formula()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            sheet.Cells["A1"].Value = "Amount";
+            sheet.Cells["A2"].Value = "{{item.Amount}}";
+            sheet.Cells["A3"].Value = "<<sum>>";
+            sheet.Names.Add("Sales", sheet.Cells["A1:A3"]);
+
+            var parser = new TemplateParser();
+            var errors = new TemplateErrors();
+            var template = parser.Parse(sheet, errors);
+
+            var items = new[]
+            {
+                new { Amount = 10m },
+                new { Amount = 20m }
+            };
+
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            var context = new RenderContext
+            {
+                Current = null,
+                Variables = new System.Collections.Generic.Dictionary<string, object> { { "Sales", items } }
+            };
+            renderer.Render(template, context, sheet);
+
+            Assert.Equal("SUBTOTAL(9,A2:A3)", sheet.Cells["A4"].Formula);
+        }
+
+        [Fact]
+        public void Render_NamedRangeWithCountTag_InsertsSubtotal3Formula()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            sheet.Cells["A1"].Value = "Name";
+            sheet.Cells["A2"].Value = "{{item.Name}}";
+            sheet.Cells["A3"].Value = "<<count>>";
+            sheet.Names.Add("Sales", sheet.Cells["A1:A3"]);
+
+            var parser = new TemplateParser();
+            var errors = new TemplateErrors();
+            var template = parser.Parse(sheet, errors);
+
+            var items = new[]
+            {
+                new { Name = "A" },
+                new { Name = "B" },
+                new { Name = "C" }
+            };
+
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            var context = new RenderContext
+            {
+                Current = null,
+                Variables = new System.Collections.Generic.Dictionary<string, object> { { "Sales", items } }
+            };
+            renderer.Render(template, context, sheet);
+
+            Assert.Equal("SUBTOTAL(3,A2:A4)", sheet.Cells["A5"].Formula);
+        }
+
+        [Fact]
+        public void Render_NamedRangeWithSumTag_EvaluatesCorrectlyAfterCalculate()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            sheet.Cells["A1"].Value = "Amount";
+            sheet.Cells["A2"].Value = "{{item.Amount}}";
+            sheet.Cells["A3"].Value = "<<sum>>";
+            sheet.Names.Add("Sales", sheet.Cells["A1:A3"]);
+
+            var parser = new TemplateParser();
+            var errors = new TemplateErrors();
+            var template = parser.Parse(sheet, errors);
+
+            var items = new[]
+            {
+                new { Amount = 15m },
+                new { Amount = 25m },
+                new { Amount = 35m }
+            };
+
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            var context = new RenderContext
+            {
+                Current = null,
+                Variables = new System.Collections.Generic.Dictionary<string, object> { { "Sales", items } }
+            };
+            renderer.Render(template, context, sheet);
+
+            package.Workbook.Calculate();
+            Assert.Equal(75m, Convert.ToDecimal(sheet.Cells["A5"].Value));
         }
     }
 }

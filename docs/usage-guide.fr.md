@@ -192,8 +192,8 @@ Créez une plage nommée appelée `Orders` couvrant `A1:B3` :
 - `{{item.Property}}` référence la propriété de l'élément courant
 - `{{index}}` donne l'index 0-based
 - La dernière ligne est la **rangée de service** pour les tags d'agrégation
-- `<<sum>>` insère une formule `=SUBTOTAL(9, ...)`
-- `<<count>>` insère une formule `=SUBTOTAL(3, ...)`
+- `<<sum>>` calcule et insère la somme des valeurs dans la colonne
+- `<<count>>` calcule et insère le nombre de valeurs non vides dans la colonne
 
 ---
 

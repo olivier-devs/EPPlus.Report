@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using EPPlus.Report.Evaluation;
@@ -264,6 +265,8 @@ namespace EPPlus.Report.Tests
             };
             renderer.Render(template, ctx, sheet);
 
+            package.Workbook.Calculate();
+
             // Header at A1, data starts at A2
             // Group A: 10, 30 → subtotal 40
             // Group B: 20 → subtotal 20
@@ -271,10 +274,10 @@ namespace EPPlus.Report.Tests
             Assert.Equal(10m, sheet.Cells["B2"].Value);
             Assert.Equal("A", sheet.Cells["A3"].Value);
             Assert.Equal(30m, sheet.Cells["B3"].Value);
-            Assert.Equal(40m, sheet.Cells["B4"].Value); // Group A subtotal
+            Assert.Equal(40m, Convert.ToDecimal(sheet.Cells["B4"].Value)); // Group A subtotal
             Assert.Equal("B", sheet.Cells["A5"].Value);
-            Assert.Equal(20m, sheet.Cells["B5"].Value);
-            Assert.Equal(20m, sheet.Cells["B6"].Value); // Group B subtotal
+            Assert.Equal(20m, Convert.ToDecimal(sheet.Cells["B5"].Value));
+            Assert.Equal(20m, Convert.ToDecimal(sheet.Cells["B6"].Value)); // Group B subtotal
         }
 
         [Fact]

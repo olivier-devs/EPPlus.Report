@@ -248,6 +248,8 @@ Passed internally to the renderer. Available for advanced usage.
 | `Current` | `object` | Current data context (root or loop item). |
 | `Variables` | `Dictionary<string, object>` | Named variables dictionary. |
 | `CurrentCollection` | `IEnumerable` | Current collection context for aggregations. |
+| `IsNamedRangeLoop` | `bool` | Indicates whether the current context is inside a named range loop. |
+| `CurrentIndex` | `int` | Zero-based index of the current item within the collection. |
 
 ---
 
@@ -279,6 +281,183 @@ public interface IExpressionEvaluator
     object Evaluate(string expression, object context);
 }
 ```
+
+---
+
+## `ExpressionEvaluator` (Advanced)
+
+The default implementation of `IExpressionEvaluator`. Resolves property paths via reflection with caching.
+
+### Constructors
+
+#### `ExpressionEvaluator()`
+
+Initializes with built-in functions: `Upper`, `Lower`, `Trim`.
+
+### Methods
+
+#### `Evaluate(string expression, object context)`
+
+Evaluates a property path against the context object.
+
+#### `Evaluate(string expression, object context, string functionName)`
+
+Evaluates a property path and applies the named function to the result.
+
+#### `RegisterFunction(string name, Func<object, object> func)`
+
+Registers a custom function by name.
+
+#### `ApplyFunction(string functionName, object value)`
+
+Applies a registered function to a value.
+
+---
+
+## Model Classes (Advanced)
+
+### `TemplateNode` (abstract)
+
+Base class for all template AST nodes.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Row` | `int` | Row number in the worksheet. |
+| `Column` | `int` | Column number in the worksheet. |
+| `RawContent` | `string` | Raw text content of the cell. |
+
+### `ExpressionNode`
+
+Represents a template expression `{{Property}}` or `{{Function(Property)}}`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ExpressionPath` | `string` | Property path to evaluate (e.g. `"Object.Property"`). |
+| `FunctionName` | `string` | Optional function name to apply (e.g. `"Upper"`). |
+
+### `LoopNode`
+
+Represents a `<<foreach Items>>` block.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `CollectionName` | `string` | Name of the collection to iterate. |
+| `Children` | `List<TemplateNode>` | Child nodes inside the loop block. |
+| `EndRow` | `int` | Row where the loop block ends. |
+| `ConditionalFormattingRules` | `List<ConditionalFormattingRule>` | CF rules associated with this block. |
+
+### `IfNode`
+
+Represents a `<<if Condition>>` block.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ConditionExpression` | `string` | Boolean expression to evaluate. |
+| `Children` | `List<TemplateNode>` | Child nodes inside the conditional block. |
+| `EndRow` | `int` | Row where the conditional block ends. |
+| `ConditionalFormattingRules` | `List<ConditionalFormattingRule>` | CF rules associated with this block. |
+
+### `GroupNode`
+
+Represents a `<<group Items by Category>>` block. Inherits from `LoopNode`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `GroupByPaths` | `List<string>` | Property paths used to group items. |
+| `Options` | `GroupOptions` | Options controlling group rendering. |
+| `SubtotalTemplate` | `List<TemplateNode>` | Template nodes for subtotal rows. |
+
+### `NamedRangeLoopNode`
+
+Represents a loop derived from an Excel named range. Inherits from `LoopNode`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `RangeName` | `string` | Name of the Excel named range. |
+| `IsHorizontal` | `bool` | Whether the loop iterates horizontally. |
+| `ServiceRowCount` | `int` | Number of service rows at the end. |
+| `ServiceTags` | `List<ServiceTag>` | Service tags (sum, count) in the service row. |
+| `EndColumn` | `int` | Column where the named range ends. |
+| `HeaderRowCount` | `int` | Number of header rows at the start. |
+| `GroupByDefinitions` | `List<GroupByDefinition>` | Group-by definitions for named range grouping. |
+| `RangeGroupOptions` | `GroupOptions` | Group options specific to the named range. |
+
+### `AggregationNode`
+
+Represents `<<sum Property>>` or `<<count Items>>`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `AggregationType` | `string` | Type of aggregation (`"sum"` or `"count"`). |
+| `PropertyName` | `string` | Property or collection name to aggregate. |
+
+### `GroupOptions`
+
+Options for controlling group rendering behavior.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `Collapse` | `bool` | `false` | Whether grouped rows should be collapsed. |
+| `MergeLabels` | `MergeMode` | `None` | How to merge group label cells. |
+| `PlaceToColumn` | `int` | `0` | Column index for group labels. |
+| `WithHeader` | `bool` | `false` | Whether the group includes a header. |
+| `DisableSubtotals` | `bool` | `false` | Whether to disable subtotal rows. |
+| `DisableOutline` | `bool` | `false` | Whether to disable the group outline. |
+| `PageBreaks` | `bool` | `false` | Whether to insert page breaks between groups. |
+| `TotalLabel` | `string` | `"Total"` | Label text for total rows. |
+| `GrandLabel` | `string` | `"Grand"` | Label text for grand total rows. |
+| `SummaryAbove` | `bool` | `false` | Whether summary rows appear above detail rows. |
+| `DisableGrandTotal` | `bool` | `false` | Whether to disable the grand total row. |
+| `Descending` | `bool` | `false` | Whether to sort groups in descending order. |
+
+### `MergeMode`
+
+Defines how group labels should be merged.
+
+| Value | Description |
+|-------|-------------|
+| `None` | Group labels are not merged. |
+| `Merge1` | Merges group labels and clears duplicate cells. |
+| `Merge2` | Merges group labels and clears duplicate cells (variant 2). |
+| `Merge3` | Merges group labels without clearing duplicate cells. |
+
+### `GroupByDefinition`
+
+Defines a grouping criterion for named range loops.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `PropertyPath` | `string` | Property path used to extract group keys. |
+| `Column` | `int` | Column index where the group key is located. |
+| `Descending` | `bool` | Whether the group should be sorted in descending order. |
+| `Options` | `GroupOptions` | Options controlling rendering of this group. |
+
+### `ServiceTag`
+
+Represents a service tag in a named range (e.g. `<<sum>>`).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `TagName` | `string` | Name of the tag (e.g. `"sum"` or `"count"`). |
+| `Row` | `int` | Row where the tag is located. |
+| `Column` | `int` | Column where the tag is located. |
+
+### `ConditionalFormattingRule`
+
+Represents a conditional formatting rule extracted from a template block.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Address` | `string` | Cell address range. |
+| `Formula` | `string` | Primary formula. |
+| `Formula2` | `string` | Secondary formula (for rules requiring two). |
+| `Type` | `eExcelConditionalFormattingRuleType` | Type of conditional formatting rule. |
+| `Priority` | `int` | Rule priority. |
+| `StopIfTrue` | `bool` | Whether evaluation stops if this rule is true. |
+
+### `PropertyNotFoundException`
+
+Exception thrown when a property referenced in a template expression cannot be found. Inherits from `ArgumentException`.
 
 ---
 
@@ -338,6 +517,7 @@ Group a collection by one or more properties, with optional subtotals and grand 
 ```
 
 **Options:**
+- `asc` suffix for explicit ascending sort: `<<group Items by Category asc>>`
 - `desc` suffix for descending sort: `<<group Items by Category desc>>`
 - `MergeLabels` merges group key cells vertically
 - Subtotal template row (last row with only aggregation nodes) is auto-detected
@@ -384,8 +564,8 @@ An alternative to `<<foreach>>` loops using Excel Named Ranges.
 
 | Tag | Description |
 |-----|-------------|
-| `<<sum>>` | Inserts a `=SUBTOTAL(9, ...)` formula for the column |
-| `<<count>>` | Inserts a `=SUBTOTAL(3, ...)` formula for the column |
+| `<<sum>>` | Calculates and inserts the sum of values in the column |
+| `<<count>>` | Calculates and inserts the count of non-empty values in the column |
 
 ### Example
 

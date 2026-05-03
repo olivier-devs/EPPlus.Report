@@ -47,6 +47,43 @@ Security Orchestrator (automated + manual review)
 
 ---
 
+## 2026-05-03 - Feature: SUBTOTAL Formulas
+
+### Type
+Feature Implementation — Pipeline orchestrator
+
+### Pipeline
+architect → coder → reviewer → security-audit → tester
+
+### Scores
+| Dimension | Score | Weight |
+|-----------|-------|--------|
+| code_quality | 88 | 0.4 |
+| security | 100 | 0.3 |
+| tests | 85 | 0.2 |
+| architecture | 90 | 0.1 |
+| **GLOBAL_SCORE** | **91.2** | — |
+
+### Threshold
+Adapted: 87 (base 85 +2, acceptance rate 100% > 80%)
+
+### Decision
+**ACCEPTED** — GLOBAL_SCORE (91.2) ≥ threshold (87)
+
+### Iterations
+1 (no rework needed)
+
+### Changes
+- `TemplateRenderer.ApplyServiceTag` : replaced C# calculation with Excel `=SUBTOTAL()` formulas
+- `NamedRangeTests.cs` : 3 new tests + existing tests updated
+- `GroupTests.cs` : assertions updated for formula evaluation
+
+### Build & Tests
+- Build: 0 errors, 0 warnings
+- Tests: 84 passed, 0 failed, 0 regressions
+
+---
+
 ## 2026-04-26 - Performance Benchmarks
 
 **Result**: PASSED

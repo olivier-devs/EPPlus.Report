@@ -192,8 +192,8 @@ Create a Named Range called `Orders` covering `A1:B3`:
 - `{{item.Property}}` references the current element's property
 - `{{index}}` gives the 0-based index
 - The last row is the **service row** for aggregation tags
-- `<<sum>>` inserts a `=SUBTOTAL(9, ...)` formula
-- `<<count>>` inserts a `=SUBTOTAL(3, ...)` formula
+- `<<sum>>` calculates and inserts the sum of values in the column
+- `<<count>>` calculates and inserts the count of non-empty values in the column
 
 ---
 

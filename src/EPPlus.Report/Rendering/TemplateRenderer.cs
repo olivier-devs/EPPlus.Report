@@ -781,38 +781,16 @@ public class TemplateRenderer : ITemplateRenderer
     private void ApplyServiceTag(ServiceTag tag, int firstDataRow, int lastDataRow, ExcelWorksheet worksheet, int row)
     {
         var cell = worksheet.Cells[row, tag.Column];
+        var rangeAddress = new ExcelAddress(firstDataRow, tag.Column, lastDataRow, tag.Column).Address;
+
         switch (tag.TagName)
         {
             case "sum":
-            {
-                decimal sum = 0;
-                for (var r = firstDataRow; r <= lastDataRow; r++)
-                {
-                    var val = worksheet.Cells[r, tag.Column].Value;
-                    if (val != null)
-                    {
-                        sum += Convert.ToDecimal(val);
-                    }
-                }
-
-                cell.Value = sum;
+                cell.Formula = $"SUBTOTAL(9,{rangeAddress})";
                 break;
-            }
             case "count":
-            {
-                var count = 0;
-                for (var r = firstDataRow; r <= lastDataRow; r++)
-                {
-                    var val = worksheet.Cells[r, tag.Column].Value;
-                    if (val != null && !string.IsNullOrWhiteSpace(val.ToString()))
-                    {
-                        count++;
-                    }
-                }
-
-                cell.Value = count;
+                cell.Formula = $"SUBTOTAL(3,{rangeAddress})";
                 break;
-            }
         }
     }
 

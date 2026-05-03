@@ -107,6 +107,16 @@ None currently.
 
 **Verdict**: APPROVED - No critical vulnerabilities found
 
+### Completed
+
+#### SUBTOTAL Formulas for Service Tags (DONE)
+- Replaced direct calculation in `ApplyServiceTag` with Excel `=SUBTOTAL()` formulas
+- `<<sum>>` → `=SUBTOTAL(9, range)` (SUM)
+- `<<count>>` → `=SUBTOTAL(3, range)` (COUNTA)
+- Enables dynamic recalculation in Excel when users modify data
+- Affects: `TemplateRenderer.ApplyServiceTag`, tests updated
+- 84 tests pass, 0 regressions
+
 ### Backlog
 
 - [ ] Pivot tables support (beyond EPPlus auto-adjustment)
