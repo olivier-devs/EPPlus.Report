@@ -450,5 +450,59 @@ namespace EPPlus.Report.Tests
             package.Workbook.Calculate();
             Assert.Equal(24m, Convert.ToDecimal(sheet.Cells["A5"].Value)); // 2*3*4=24
         }
+
+        [Fact]
+        public void Render_NamedRangeWithStddevTag_GeneratesSubtotal7()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            sheet.Cells["A1"].Value = "Amount";
+            sheet.Cells["A2"].Value = "{{item.Amount}}";
+            sheet.Cells["A3"].Value = "<<stddev>>";
+            sheet.Names.Add("Sales", sheet.Cells["A1:A3"]);
+
+            var parser = new TemplateParser();
+            var errors = new TemplateErrors();
+            var template = parser.Parse(sheet, errors);
+
+            var items = new[] { new { Amount = 10m }, new { Amount = 20m }, new { Amount = 30m } };
+
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            var context = new RenderContext { Current = null, Variables = new System.Collections.Generic.Dictionary<string, object> { { "Sales", items } } };
+            renderer.Render(template, context, sheet);
+
+            Assert.Equal("SUBTOTAL(7,A2:A4)", sheet.Cells["A5"].Formula);
+            package.Workbook.Calculate();
+            var result = Convert.ToDouble(sheet.Cells["A5"].Value);
+            Assert.InRange(result, 9.9, 10.1);
+        }
+
+        [Fact]
+        public void Render_NamedRangeWithStddevpTag_GeneratesSubtotal8()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            sheet.Cells["A1"].Value = "Amount";
+            sheet.Cells["A2"].Value = "{{item.Amount}}";
+            sheet.Cells["A3"].Value = "<<stddevp>>";
+            sheet.Names.Add("Sales", sheet.Cells["A1:A3"]);
+
+            var parser = new TemplateParser();
+            var errors = new TemplateErrors();
+            var template = parser.Parse(sheet, errors);
+
+            var items = new[] { new { Amount = 10m }, new { Amount = 20m }, new { Amount = 30m } };
+
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            var context = new RenderContext { Current = null, Variables = new System.Collections.Generic.Dictionary<string, object> { { "Sales", items } } };
+            renderer.Render(template, context, sheet);
+
+            Assert.Equal("SUBTOTAL(8,A2:A4)", sheet.Cells["A5"].Formula);
+            package.Workbook.Calculate();
+            var result = Convert.ToDouble(sheet.Cells["A5"].Value);
+            Assert.InRange(result, 8.1, 8.2);
+        }
     }
 }

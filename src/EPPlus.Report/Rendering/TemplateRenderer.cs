@@ -806,6 +806,12 @@ public class TemplateRenderer : ITemplateRenderer
             case "product":
                 cell.Formula = $"SUBTOTAL(6,{rangeAddress})";
                 break;
+            case "stddev":
+                cell.Formula = $"SUBTOTAL(7,{rangeAddress})";
+                break;
+            case "stddevp":
+                cell.Formula = $"SUBTOTAL(8,{rangeAddress})";
+                break;
         }
     }
 
