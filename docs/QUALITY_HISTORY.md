@@ -47,6 +47,42 @@ Security Orchestrator (automated + manual review)
 
 ---
 
+## 2026-05-03 - Feature: Service Tags Etendus v2
+
+### Type
+Feature Implementation — Pipeline orchestrator (9 sub-tasks)
+
+### Pipeline
+architect → coder → reviewer → security-audit → tester (repeated for each task)
+
+### Scores
+| Dimension | Score | Weight |
+|-----------|-------|--------|
+| code_quality | 95.2 | 0.4 |
+| security | 98.9 | 0.3 |
+| tests | 100 | 0.2 |
+| architecture | 95 | 0.1 |
+| **GLOBAL_SCORE** | **97.25** | — |
+
+### Threshold
+Adapted: 87 (base 85 +2, acceptance rate 100% > 80%)
+
+### Decision
+**ACCEPTED** — GLOBAL_SCORE (97.25) ≥ threshold (87)
+
+### Iterations
+1 (no rework needed across 9 tasks)
+
+### Changes
+- `TemplateRenderer.ApplyServiceTag` : added 9 new cases (avg, counta, max, min, product, stddev, stddevp, var, varp)
+- `NamedRangeTests.cs` : 9 new tests (one per function)
+
+### Build & Tests
+- Build: 0 errors, 0 warnings
+- Tests: 93 passed, 0 failed, 0 regressions
+
+---
+
 ## 2026-05-03 - Feature: SUBTOTAL Formulas
 
 ### Type

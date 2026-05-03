@@ -117,6 +117,21 @@ None currently.
 - Affects: `TemplateRenderer.ApplyServiceTag`, tests updated
 - 84 tests pass, 0 regressions
 
+#### Service Tags Etendus v2 (DONE - 2026-05-03)
+- Added 9 new service tags for Excel aggregation functions
+- `<<avg>>` → SUBTOTAL(1, range) (AVERAGE)
+- `<<counta>>` → SUBTOTAL(3, range) (COUNTA)
+- `<<max>>` → SUBTOTAL(4, range) (MAX)
+- `<<min>>` → SUBTOTAL(5, range) (MIN)
+- `<<product>>` → SUBTOTAL(6, range) (PRODUCT)
+- `<<stddev>>` → SUBTOTAL(7, range) (STDEV - sample)
+- `<<stddevp>>` → SUBTOTAL(8, range) (STDEVP - population)
+- `<<var>>` → SUBTOTAL(10, range) (VAR - sample)
+- `<<varp>>` → SUBTOTAL(11, range) (VARP - population)
+- All tags generate dynamic SUBTOTAL formulas with recalculation in Excel
+- 9 new tests in `NamedRangeTests.cs`
+- 93 tests pass, 0 regressions
+
 ### Backlog
 
 - [ ] Pivot tables support (beyond EPPlus auto-adjustment)
