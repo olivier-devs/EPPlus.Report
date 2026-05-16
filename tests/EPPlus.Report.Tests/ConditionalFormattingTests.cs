@@ -50,6 +50,7 @@ namespace EPPlus.Report.Tests
             var rule = sheet.ConditionalFormatting.First();
             Assert.True(rule.Address.Start.Row <= 2, "CF should start at or before row 2");
             Assert.True(rule.Address.End.Row >= 4, "CF should end at or after row 4");
+            Assert.Equal(Color.Red.ToArgb(), rule.Style.Fill.BackgroundColor.Color?.ToArgb());
         }
 
         [Fact]
@@ -112,6 +113,7 @@ namespace EPPlus.Report.Tests
             Assert.True(rule.Address.Start.Row <= 2, "CF should start at or before row 2");
             // Should extend at least to the last subtotal row (row 6 or beyond)
             Assert.True(rule.Address.End.Row >= 6, "CF should end at or after row 6 to cover subtotals");
+            Assert.Equal(Color.Red.ToArgb(), rule.Style.Fill.BackgroundColor.Color?.ToArgb());
         }
 
         [Fact]
@@ -148,6 +150,7 @@ namespace EPPlus.Report.Tests
             Assert.Equal("A2>100", exprRule.Formula?.ToString());
             Assert.True(rule.Address.Start.Row <= 2, "CF should start at or before row 2");
             Assert.True(rule.Address.End.Row >= 3, "CF should end at or after row 3");
+            Assert.Equal(Color.Red.ToArgb(), rule.Style.Fill.BackgroundColor.Color?.ToArgb());
         }
 
         [Fact]
@@ -172,6 +175,8 @@ namespace EPPlus.Report.Tests
             Assert.Single(loopNode.ConditionalFormattingRules);
             Assert.NotNull(loopNode.ConditionalFormattingRules[0].Address);
             Assert.Contains("A2", loopNode.ConditionalFormattingRules[0].Address);
+            Assert.NotNull(loopNode.ConditionalFormattingRules[0].FillStyle);
+            Assert.Equal(Color.Red.ToArgb(), loopNode.ConditionalFormattingRules[0].FillStyle.BackgroundColor.ToArgb());
         }
     }
 }
