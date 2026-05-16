@@ -195,6 +195,59 @@ Create a Named Range called `Orders` covering `A1:B3`:
 - `<<sum>>` calculates and inserts the sum of values in the column
 - `<<count>>` calculates and inserts the count of non-empty values in the column
 
+### Service Tags (All Aggregation Functions)
+
+All service tags generate dynamic `SUBTOTAL()` formulas that recalculate automatically when users modify data in Excel:
+
+| Tag | Description | Excel Function |
+|-----|-------------|----------------|
+| `<<sum>>` | Sum of values | SUBTOTAL(9) - SUM |
+| `<<count>>` | Count of non-empty cells | SUBTOTAL(3) - COUNTA |
+| `<<counta>>` | Alias for count | SUBTOTAL(3) - COUNTA |
+| `<<avg>>` | Average of values | SUBTOTAL(1) - AVERAGE |
+| `<<max>>` | Maximum value | SUBTOTAL(4) - MAX |
+| `<<min>>` | Minimum value | SUBTOTAL(5) - MIN |
+| `<<product>>` | Product of values | SUBTOTAL(6) - PRODUCT |
+| `<<stddev>>` | Sample standard deviation | SUBTOTAL(7) - STDEV |
+| `<<stddevp>>` | Population standard deviation | SUBTOTAL(8) - STDEVP |
+| `<<var>>` | Sample variance | SUBTOTAL(10) - VAR |
+| `<<varp>>` | Population variance | SUBTOTAL(11) - VARP |
+
+#### Complete Example with All Service Tags
+
+```csharp
+var engine = new TemplateEngine("sales_report.xlsx");
+
+var sales = new[]
+{
+    new { Product = "Widget", Qty = 10, Price = 25.00m, Category = "Electronics" },
+    new { Product = "Gadget", Qty = 5, Price = 50.00m, Category = "Electronics" },
+    new { Product = "Tool", Qty = 20, Price = 15.00m, Category = "Hardware" }
+};
+
+engine.AddVariable("Sales", sales);
+var result = engine.Generate();
+engine.SaveAs("sales_report_output.xlsx");
+```
+
+**Template (`sales_report.xlsx`):** Named Range `Sales` covering `A1:E4`
+
+| | A | B | C | D | E |
+|---|---|---|---|---|---|
+| 1 | Product | Qty | Price | Category | Total |
+| 2 | {{item.Product}} | {{item.Qty}} | {{item.Price}} | {{item.Category}} | =B2*C2 |
+| 3 | <<sum>> | <<sum>> | | <<counta>> | <<sum>> |
+
+**Result:**
+- Row 2 is duplicated for each item
+- Row 3 contains dynamic SUBTOTAL formulas:
+  - A3: `=SUBTOTAL(9,A2:A4)` (sum of products)
+  - B3: `=SUBTOTAL(9,B2:B4)` (sum of quantities)
+  - D3: `=SUBTOTAL(3,D2:D4)` (count of categories)
+  - E3: `=SUBTOTAL(9,E2:E4)` (sum of totals)
+
+When users open the file in Excel, they can add/remove rows and the subtotals will update automatically!
+
 ---
 
 ## Conditions

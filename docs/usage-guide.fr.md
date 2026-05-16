@@ -195,6 +195,59 @@ Créez une plage nommée appelée `Orders` couvrant `A1:B3` :
 - `<<sum>>` calcule et insère la somme des valeurs dans la colonne
 - `<<count>>` calcule et insère le nombre de valeurs non vides dans la colonne
 
+### Tags de service (toutes les fonctions d'agrégation)
+
+Tous les tags de service génèrent des formules `SUBTOTAL()` dynamiques qui se recalculent automatiquement lorsque les utilisateurs modifient les données dans Excel :
+
+| Tag | Description | Fonction Excel |
+|-----|-------------|----------------|
+| `<<sum>>` | Somme des valeurs | SUBTOTAL(9) - SUM |
+| `<<count>>` | Nombre de cellules non vides | SUBTOTAL(3) - COUNTA |
+| `<<counta>>` | Alias de count | SUBTOTAL(3) - COUNTA |
+| `<<avg>>` | Moyenne des valeurs | SUBTOTAL(1) - AVERAGE |
+| `<<max>>` | Valeur maximale | SUBTOTAL(4) - MAX |
+| `<<min>>` | Valeur minimale | SUBTOTAL(5) - MIN |
+| `<<product>>` | Produit des valeurs | SUBTOTAL(6) - PRODUCT |
+| `<<stddev>>` | Écart-type (échantillon) | SUBTOTAL(7) - STDEV |
+| `<<stddevp>>` | Écart-type (population) | SUBTOTAL(8) - STDEVP |
+| `<<var>>` | Variance (échantillon) | SUBTOTAL(10) - VAR |
+| `<<varp>>` | Variance (population) | SUBTOTAL(11) - VARP |
+
+#### Exemple complet avec tous les tags de service
+
+```csharp
+var engine = new TemplateEngine("rapport_ventes.xlsx");
+
+var sales = new[]
+{
+    new { Product = "Widget", Qty = 10, Price = 25.00m, Category = "Electronics" },
+    new { Product = "Gadget", Qty = 5, Price = 50.00m, Category = "Electronics" },
+    new { Product = "Tool", Qty = 20, Price = 15.00m, Category = "Hardware" }
+};
+
+engine.AddVariable("Sales", sales);
+var result = engine.Generate();
+engine.SaveAs("rapport_ventes_output.xlsx");
+```
+
+**Template (`rapport_ventes.xlsx`) :** Plage nommée `Sales` couvrant `A1:E4`
+
+| | A | B | C | D | E |
+|---|---|---|---|---|---|
+| 1 | Product | Qty | Price | Category | Total |
+| 2 | {{item.Product}} | {{item.Qty}} | {{item.Price}} | {{item.Category}} | =B2*C2 |
+| 3 | <<sum>> | <<sum>> | | <<counta>> | <<sum>> |
+
+**Résultat :**
+- La ligne 2 est dupliquée pour chaque élément
+- La ligne 3 contient des formules SUBTOTAL dynamiques :
+  - A3: `=SUBTOTAL(9,A2:A4)` (somme des produits)
+  - B3: `=SUBTOTAL(9,B2:B4)` (somme des quantités)
+  - D3: `=SUBTOTAL(3,D2:D4)` (nombre de catégories)
+  - E3: `=SUBTOTAL(9,E2:E4)` (somme des totaux)
+
+Lorsque les utilisateurs ouvrent le fichier dans Excel, ils peuvent ajouter/supprimer des lignes et les sous-totaux se mettront à jour automatiquement !
+
 ---
 
 ## Conditions
