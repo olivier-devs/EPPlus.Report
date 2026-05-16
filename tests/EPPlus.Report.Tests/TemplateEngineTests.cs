@@ -178,5 +178,29 @@ namespace EPPlus.Report.Tests
                 File.Delete(tempFile);
             }
         }
+
+        [Fact]
+        public void Dispose_DoesNotThrow()
+        {
+            var tempFile = Path.GetTempFileName() + ".xlsx";
+            try
+            {
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                using (var package = new ExcelPackage())
+                {
+                    var sheet = package.Workbook.Worksheets.Add("Sheet1");
+                    sheet.Cells["A1"].Value = "{{Name}}";
+                    package.SaveAs(new FileInfo(tempFile));
+                }
+
+                var engine = new TemplateEngine(tempFile);
+                var exception = Record.Exception(() => engine.Dispose());
+                Assert.Null(exception);
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 }

@@ -14,7 +14,7 @@ namespace EPPlus.Report;
 /// <summary>
 ///     Provides the main API for parsing Excel templates, injecting data, and generating rendered Excel files.
 /// </summary>
-public class TemplateEngine
+public class TemplateEngine : IDisposable
 {
     private readonly ExcelPackage _package;
     private readonly ITemplateParser _parser;
@@ -356,5 +356,13 @@ public class TemplateEngine
                 }
             }
         }
+    }
+
+    /// <summary>
+    ///     Releases the underlying Excel package and all associated resources.
+    /// </summary>
+    public void Dispose()
+    {
+        _package?.Dispose();
     }
 }
