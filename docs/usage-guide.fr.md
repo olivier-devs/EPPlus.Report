@@ -17,8 +17,9 @@ Guide pas à pas avec des exemples pratiques.
 9. [Groupement](#groupement)
 10. [Évaluation des formules](#évaluation-des-formules)
 11. [Travail avec les streams](#travail-avec-les-streams)
-12. [Gestion des erreurs](#gestion-des-erreurs)
-13. [Exemple ASP.NET Core](#exemple-aspnet-core)
+12. [Mise en forme conditionnelle avec préservation des styles](#mise-en-forme-conditionnelle-avec-préservation-des-styles)
+13. [Gestion des erreurs](#gestion-des-erreurs)
+14. [Exemple ASP.NET Core](#exemple-aspnet-core)
 
 ---
 
@@ -491,6 +492,22 @@ engine.SaveAs(outputStream);
 // Maintenant outputStream contient le fichier Excel généré
 // Dans ASP.NET Core :
 // return File(outputStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "rapport.xlsx");
+```
+
+---
+
+## Mise en forme conditionnelle avec préservation des styles
+
+Les règles de mise en forme conditionnelle définies dans les modèles sont désormais entièrement préservées lors du rendu, y compris tous les styles visuels (couleurs, polices, bordures, barres de données, jeux d'icônes, échelles de couleurs).
+
+```csharp
+using var engine = new TemplateEngine("template.xlsx");
+engine.AddVariable("items", items);
+
+// Les règles CF définies dans le modèle (couleurs, polices, bordures, barres de données, jeux d'icônes)
+// sont entièrement préservées dans la sortie — aucun style visuel n'est perdu.
+var result = engine.Generate();
+engine.SaveAs("output.xlsx");
 ```
 
 ---

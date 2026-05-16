@@ -17,8 +17,9 @@ Step-by-step guide with practical examples.
 9. [Grouping](#grouping)
 10. [Formula Evaluation](#formula-evaluation)
 11. [Working with Streams](#working-with-streams)
-12. [Error Handling](#error-handling)
-13. [ASP.NET Core Example](#aspnet-core-example)
+12. [Conditional Formatting with Style Preservation](#conditional-formatting-with-style-preservation)
+13. [Error Handling](#error-handling)
+14. [ASP.NET Core Example](#aspnet-core-example)
 
 ---
 
@@ -491,6 +492,22 @@ engine.SaveAs(outputStream);
 // Now outputStream contains the generated Excel file
 // In ASP.NET Core:
 // return File(outputStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "report.xlsx");
+```
+
+---
+
+## Conditional Formatting with Style Preservation
+
+Conditional formatting rules defined in templates are now fully preserved during rendering, including all visual styles (colors, fonts, borders, data bars, icon sets, color scales).
+
+```csharp
+using var engine = new TemplateEngine("template.xlsx");
+engine.AddVariable("items", items);
+
+// CF rules defined in the template (colors, fonts, borders, data bars, icon sets)
+// are fully preserved in the output — no visual styling is lost.
+var result = engine.Generate();
+engine.SaveAs("output.xlsx");
 ```
 
 ---

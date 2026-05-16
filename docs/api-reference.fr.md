@@ -578,29 +578,17 @@ Alternative aux boucles `<<foreach>>` utilisant les plages nommées Excel.
 
 Tous les tags de service génèrent des formules `SUBTOTAL()` dynamiques qui se recalculent automatiquement lorsque les utilisateurs modifient les données dans Excel.
 
-### Exemple
+---
 
-**Template Excel :** Plage nommée `Orders` couvrant `A1:B3`
+## Préservation des styles de mise en forme conditionnelle
 
-| | A | B |
-|---|---|---|
-| 1 | Order No | Amount |
-| 2 | {{item.OrderNo}} | {{item.Amount}} |
-| 3 | <<sum>> | |
+Tous les styles visuels des règles de mise en forme conditionnelle sont désormais entièrement clonés lors du rendu :
 
-**Code :**
-```csharp
-var engine = new TemplateEngine("template.xlsx");
-engine.AddVariable("Orders", new[]
-{
-    new { OrderNo = 100, Amount = 50m },
-    new { OrderNo = 101, Amount = 75m }
-});
-var result = engine.Generate();
-engine.SaveAs("output.xlsx");
-```
-
-**Résultat :** Les lignes A2:B2 sont dupliquées pour chaque commande, avec `=SUBTOTAL(9, ...)` en A3.
+- **Styles Remplissage, Police, Bordure** — préservés pour Expression, CellIs, GreaterThan, LessThan, Equal et types similaires
+- **Échelles de couleurs** — TwoColorScale et ThreeColorScale avec tous les points de couleur et types de valeur
+- **Barres de données** — Couleur, limites min/max, position d'axe, direction, bordure
+- **Jeux d'icônes** — 3/4/5 icônes avec ShowValue, Reverse et critères individuels
+- **Types non supportés** — repli gracieux vers le comportement v1 (placeholder rouge)
 
 ---
 

@@ -578,29 +578,17 @@ An alternative to `<<foreach>>` loops using Excel Named Ranges.
 
 All service tags generate dynamic `SUBTOTAL()` formulas that recalculate automatically when users modify data in Excel.
 
-### Example
+---
 
-**Template Excel:** Named Range `Orders` covering `A1:B3`
+## Conditional Formatting Style Preservation
 
-| | A | B |
-|---|---|---|
-| 1 | Order No | Amount |
-| 2 | {{item.OrderNo}} | {{item.Amount}} |
-| 3 | <<sum>> | |
+All visual styles of conditional formatting rules are now fully cloned during rendering:
 
-**Code:**
-```csharp
-var engine = new TemplateEngine("template.xlsx");
-engine.AddVariable("Orders", new[]
-{
-    new { OrderNo = 100, Amount = 50m },
-    new { OrderNo = 101, Amount = 75m }
-});
-var result = engine.Generate();
-engine.SaveAs("output.xlsx");
-```
-
-**Result:** Rows A2:B2 are duplicated for each order, with `=SUBTOTAL(9, ...)` in A3.
+- **Fill, Font, Border styles** — preserved for Expression, CellIs, GreaterThan, LessThan, Equal, and similar rule types
+- **Color Scales** — TwoColorScale and ThreeColorScale with all color stops and value types
+- **Data Bars** — Color, min/max bounds, axis position, direction, border
+- **Icon Sets** — 3/4/5 icon sets with ShowValue, Reverse, and individual criteria
+- **Unsupported types** — gracefully fallback to v1 behavior (red placeholder)
 
 ---
 

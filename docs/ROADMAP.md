@@ -132,10 +132,21 @@ None currently.
 - 9 new tests in `NamedRangeTests.cs`
 - 93 tests pass, 0 regressions
 
+### Completed (2026-05-16)
+
+#### Full Conditional Formatting Style Cloning (DONE)
+- Expression / CellIs / GreaterThan / LessThan / Equal / etc.: Fill, Font, Border styles fully cloned
+- TwoColorScale / ThreeColorScale: Color stops, value types, and values fully cloned
+- DataBar: Color, min/max bounds, axis, direction fully cloned
+- IconSet (3/4/5 icons): ShowValue, Reverse, IconCriteria fully cloned
+- Unsupported types gracefully fallback to v1 behavior (red placeholder)
+- 5 new integration tests + 5 updated existing tests
+- `ConditionalFormattingCloner` utility with Extract/Apply pattern
+
 ### Backlog
 
 - [ ] Pivot tables support (beyond EPPlus auto-adjustment)
-- [ ] Full CF style cloning (colors, data bars, icon sets)
+- [x] Full CF style cloning (colors, data bars, icon sets)
 - [ ] Async API variants
 - [ ] `SaveOptions.Password` for workbook encryption
 - [x] `TemplateGenerateResult.Warnings` for non-blocking issues
