@@ -685,13 +685,19 @@ public static class ConditionalFormattingCloner
             if (settings.MinValue != null)
             {
                 cf.LowValue.Type = settings.MinValue.Type;
-                cf.LowValue.Value = settings.MinValue.Value ?? 0;
+                if (IsValueTypeWithNumericValue(settings.MinValue.Type))
+                {
+                    cf.LowValue.Value = settings.MinValue.Value ?? 0;
+                }
             }
 
             if (settings.MaxValue != null)
             {
                 cf.HighValue.Type = settings.MaxValue.Type;
-                cf.HighValue.Value = settings.MaxValue.Value ?? 0;
+                if (IsValueTypeWithNumericValue(settings.MaxValue.Type))
+                {
+                    cf.HighValue.Value = settings.MaxValue.Value ?? 0;
+                }
             }
 
             if (settings.AxisColor.HasValue)
@@ -765,9 +771,12 @@ public static class ConditionalFormattingCloner
             return;
         }
 
-        // Use reflection to access ShowValue, Reverse, and icon properties
-        var showValueProp = typeof(T).GetProperty("ShowValue");
-        var reverseProp = typeof(T).GetProperty("Reverse");
+        // Use runtime type to access ShowValue, Reverse, and icon properties
+        // (these are declared on parent interfaces like IExcelConditionalFormattingIconSetGroup<T>,
+        //  so typeof(T) may not find them when T is a derived interface)
+        var cfType = cf.GetType();
+        var showValueProp = cfType.GetProperty("ShowValue");
+        var reverseProp = cfType.GetProperty("Reverse");
 
         showValueProp?.SetValue(cf, settings.ShowValue);
         reverseProp?.SetValue(cf, settings.Reverse);
@@ -886,6 +895,17 @@ public static class ConditionalFormattingCloner
         cf.Priority = source.Priority;
         cf.StopIfTrue = source.StopIfTrue;
         return cf;
+    }
+
+    /// <summary>
+    ///     Returns true if the value object type supports a numeric Value property.
+    ///     EPPlus throws if Value is set on Min/Max/AutoResult types.
+    /// </summary>
+    private static bool IsValueTypeWithNumericValue(eExcelConditionalFormattingValueObjectType type)
+    {
+        return type is eExcelConditionalFormattingValueObjectType.Num
+            or eExcelConditionalFormattingValueObjectType.Percent
+            or eExcelConditionalFormattingValueObjectType.Percentile;
     }
 
     #endregion
