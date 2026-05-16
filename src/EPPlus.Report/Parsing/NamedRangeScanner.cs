@@ -131,6 +131,71 @@ public class NamedRangeScanner
             }
         }
 
+        // If no service row inside the named range, check the adjacent row below
+        if (serviceTags.Count == 0 && groupByDefinitions.Count == 0)
+        {
+            var adjacentRow = endRow + 1;
+            if (adjacentRow <= worksheet.Dimension?.End.Row)
+            {
+                var adjacentTags = new List<ServiceTag>();
+                var adjacentGroups = new List<GroupByDefinition>();
+                var hasNonServiceContent = false;
+
+                for (var c = startCol; c <= endCol; c++)
+                {
+                    var cellValue = worksheet.Cells[adjacentRow, c].Text;
+                    if (string.IsNullOrWhiteSpace(cellValue))
+                    {
+                        continue;
+                    }
+
+                    // Any expression means this is not a service row
+                    if (ExpressionRegex.IsMatch(cellValue))
+                    {
+                        hasNonServiceContent = true;
+                        break;
+                    }
+
+                    var groupMatch = GroupTagRegex.Match(cellValue);
+                    if (groupMatch.Success)
+                    {
+                        adjacentGroups.Add(new GroupByDefinition
+                        {
+                            PropertyPath = groupMatch.Groups[1].Value,
+                            Column = c,
+                            Descending = groupMatch.Groups[2].Success &&
+                                         groupMatch.Groups[2].Value.Equals("desc", StringComparison.OrdinalIgnoreCase)
+                        });
+                        continue;
+                    }
+
+                    var tagMatch = ServiceTagRegex.Match(cellValue);
+                    if (tagMatch.Success && !tagMatch.Groups[1].Value.Equals("group", StringComparison.OrdinalIgnoreCase))
+                    {
+                        adjacentTags.Add(new ServiceTag
+                        {
+                            TagName = tagMatch.Groups[1].Value.ToLowerInvariant(),
+                            Row = adjacentRow,
+                            Column = c
+                        });
+                    }
+                    else
+                    {
+                        hasNonServiceContent = true;
+                        break;
+                    }
+                }
+
+                if (!hasNonServiceContent && (adjacentTags.Count > 0 || adjacentGroups.Count > 0))
+                {
+                    endRow = adjacentRow;
+                    loopNode.EndRow = endRow;
+                    serviceTags = adjacentTags;
+                    groupByDefinitions = adjacentGroups;
+                }
+            }
+        }
+
         loopNode.ServiceTags = serviceTags;
         loopNode.GroupByDefinitions = groupByDefinitions;
         loopNode.ServiceRowCount = serviceTags.Count > 0 || groupByDefinitions.Count > 0 ? 1 : 0;

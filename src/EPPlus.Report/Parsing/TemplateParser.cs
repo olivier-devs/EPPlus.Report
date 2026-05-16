@@ -104,6 +104,31 @@ public class TemplateParser : ITemplateParser
 
             if (!overlaps)
             {
+                // Find existing nodes inside the named range that the scanner may have missed
+                var nodesInsideRange = template.Nodes
+                    .Where(n => n.Row >= nrLoop.Row && n.Row <= nrLoop.EndRow &&
+                                n.Column >= nrLoop.Column && n.Column <= nrLoop.EndColumn)
+                    .ToList();
+
+                foreach (var existingNode in nodesInsideRange)
+                {
+                    var scannerChildIndex = nrLoop.Children.FindIndex(c =>
+                        c.Row == existingNode.Row && c.Column == existingNode.Column);
+                    if (scannerChildIndex >= 0)
+                    {
+                        // The scanner created a generic TextNode for a directive it didn't recognise.
+                        // Replace it with the properly typed node from the first parsing pass.
+                        if (nrLoop.Children[scannerChildIndex] is TextNode && existingNode is not TextNode)
+                        {
+                            nrLoop.Children[scannerChildIndex] = existingNode;
+                        }
+                    }
+                    else
+                    {
+                        nrLoop.Children.Add(existingNode);
+                    }
+                }
+
                 // Remove any existing nodes that fall inside the named range
                 template.Nodes.RemoveAll(n =>
                     n.Row >= nrLoop.Row && n.Row <= nrLoop.EndRow &&

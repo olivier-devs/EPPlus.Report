@@ -51,7 +51,7 @@ public class TemplateRenderer : ITemplateRenderer
     // ... rest of the file remains unchanged, only Render method is public API
     private int RenderNodes(List<TemplateNode> nodes, RenderContext context, ExcelWorksheet worksheet, int rowOffset)
     {
-        foreach (var node in nodes)
+        foreach (var node in nodes.OrderBy(n => n.Row))
         {
             rowOffset = RenderNode(node, context, worksheet, rowOffset);
         }
@@ -234,9 +234,10 @@ public class TemplateRenderer : ITemplateRenderer
             return rowOffset - (loopNode.EndRow - loopNode.Row + 1);
         }
 
-        // Separate children into header and data
+        // Separate children into header, data, and aggregation
         var headerChildren = new List<TemplateNode>();
         var dataChildren = new List<TemplateNode>();
+        var aggregationChildren = new List<AggregationNode>();
         foreach (var child in loopNode.Children)
         {
             if (child.Row < dataStartRow)
@@ -245,7 +246,14 @@ public class TemplateRenderer : ITemplateRenderer
             }
             else if (child.Row <= dataEndRow)
             {
-                dataChildren.Add(child);
+                if (child is AggregationNode agg)
+                {
+                    aggregationChildren.Add(agg);
+                }
+                else
+                {
+                    dataChildren.Add(child);
+                }
             }
         }
 
@@ -284,6 +292,19 @@ public class TemplateRenderer : ITemplateRenderer
                 var childOffset = insertAtRow - dataStartRow;
                 currentOffset = RenderNodes(dataChildren, itemContext, worksheet, childOffset);
             }
+        }
+
+        // Render aggregation nodes after all data rows
+        foreach (var aggNode in aggregationChildren)
+        {
+            var aggContext = new RenderContext
+            {
+                Current = null,
+                Variables = context.Variables,
+                CurrentCollection = collection,
+                IsNamedRangeLoop = true
+            };
+            RenderAggregation(aggNode, aggContext, worksheet, currentOffset);
         }
 
         // Process service tags
@@ -342,9 +363,10 @@ public class TemplateRenderer : ITemplateRenderer
             return rowOffset - (loopNode.EndRow - loopNode.Row + 1);
         }
 
-        // Separate children into header and data
+        // Separate children into header, data, and aggregation
         var headerChildren = new List<TemplateNode>();
         var dataChildren = new List<TemplateNode>();
+        var aggregationChildren = new List<AggregationNode>();
         foreach (var child in loopNode.Children)
         {
             if (child.Row < dataStartRow)
@@ -353,7 +375,14 @@ public class TemplateRenderer : ITemplateRenderer
             }
             else if (child.Row <= dataEndRow)
             {
-                dataChildren.Add(child);
+                if (child is AggregationNode agg)
+                {
+                    aggregationChildren.Add(agg);
+                }
+                else
+                {
+                    dataChildren.Add(child);
+                }
             }
         }
 
@@ -430,6 +459,19 @@ public class TemplateRenderer : ITemplateRenderer
             }
         }
 
+        // Render aggregation nodes after all groups
+        foreach (var aggNode in aggregationChildren)
+        {
+            var aggContext = new RenderContext
+            {
+                Current = null,
+                Variables = context.Variables,
+                CurrentCollection = collection,
+                IsNamedRangeLoop = true
+            };
+            RenderAggregation(aggNode, aggContext, worksheet, currentOffset);
+        }
+
         // Remove original service row
         if (serviceRowCount > 0)
         {
@@ -448,9 +490,24 @@ public class TemplateRenderer : ITemplateRenderer
     {
         object result = null;
 
+        // Resolve the collection to aggregate: CurrentCollection (inside loop) -> Variables -> Current
+        var collection = context.CurrentCollection;
+        if (collection == null)
+        {
+            if (context.Variables != null && context.Variables.TryGetValue(aggNode.PropertyName, out var varValue))
+            {
+                collection = varValue as IEnumerable;
+            }
+            else if (context.Current != null)
+            {
+                var evaluated = TryEvaluate(aggNode.PropertyName, context.Current, worksheet, aggNode.Row + rowOffset,
+                    aggNode.Column, worksheet.Cells[aggNode.Row + rowOffset, aggNode.Column].Address);
+                collection = evaluated as IEnumerable;
+            }
+        }
+
         if (aggNode.AggregationType == "sum")
         {
-            var collection = context.CurrentCollection;
             if (collection != null)
             {
                 decimal sum = 0;
@@ -460,7 +517,18 @@ public class TemplateRenderer : ITemplateRenderer
                         aggNode.Column, worksheet.Cells[aggNode.Row + rowOffset, aggNode.Column].Address);
                     if (val != null)
                     {
-                        sum += Convert.ToDecimal(val);
+                        try
+                        {
+                            sum += Convert.ToDecimal(val);
+                        }
+                        catch (FormatException)
+                        {
+                            // Silently ignore non-numeric values during aggregation
+                        }
+                        catch (InvalidCastException)
+                        {
+                            // Silently ignore non-numeric values during aggregation
+                        }
                     }
                 }
 
@@ -469,7 +537,6 @@ public class TemplateRenderer : ITemplateRenderer
         }
         else if (aggNode.AggregationType == "count")
         {
-            var collection = context.CurrentCollection;
             if (collection != null)
             {
                 var count = 0;
@@ -496,7 +563,7 @@ public class TemplateRenderer : ITemplateRenderer
                 }
                 else
                 {
-                    result = val;
+                    result = val != null ? 1 : 0;
                 }
             }
         }
