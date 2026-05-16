@@ -20,6 +20,24 @@ namespace EPPlus.Report.Tests
             public TestAddress Address { get; set; } = new TestAddress();
         }
 
+        public class TestWriteOnly
+        {
+            private string _value;
+            public string Name { get; set; } = "Test";
+            public string WriteOnlyProperty { set => _value = value; }
+        }
+
+        [Fact]
+        public void Evaluate_WriteOnlyProperty_ThrowsPropertyNotFoundException()
+        {
+            var evaluator = new ExpressionEvaluator();
+            var obj = new TestWriteOnly();
+
+            var ex = Assert.Throws<PropertyNotFoundException>(() => evaluator.Evaluate("WriteOnlyProperty", obj));
+            Assert.Contains("WriteOnlyProperty", ex.Message);
+            Assert.Contains("write-only", ex.Message);
+        }
+
         [Fact]
         public void Evaluate_AllowedPropertiesSet_PropertyAllowed_ReturnsValue()
         {

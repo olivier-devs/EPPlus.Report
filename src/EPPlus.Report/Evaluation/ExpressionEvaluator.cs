@@ -136,6 +136,33 @@ public class ExpressionEvaluator : IExpressionEvaluator
         return current;
     }
 
+    /// <summary>
+    ///     Determines whether a type is a terminal type that cannot be further navigated.
+    ///     Terminal types include primitives, strings, decimals, DateTimes, and nullable value types
+    ///     whose underlying type is also terminal.
+    /// </summary>
+    private static bool IsTerminalType(Type type)
+    {
+        if (type == null)
+        {
+            return true;
+        }
+
+        if (type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime)
+            || type == typeof(DateTimeOffset) || type == typeof(TimeSpan) || type == typeof(Guid))
+        {
+            return true;
+        }
+
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+        {
+            var underlyingType = Nullable.GetUnderlyingType(type);
+            return IsTerminalType(underlyingType);
+        }
+
+        return false;
+    }
+
     private static PropertyInfo[] CompileExpression(string expression, Type contextType)
     {
         var parts = expression.Split('.');
@@ -149,6 +176,11 @@ public class ExpressionEvaluator : IExpressionEvaluator
             if (property == null)
             {
                 throw new PropertyNotFoundException($"Property '{trimmedPart}' not found on type '{currentType.Name}'");
+            }
+
+            if (!property.CanRead)
+            {
+                throw new PropertyNotFoundException($"Property '{trimmedPart}' on type '{currentType.Name}' is write-only and cannot be evaluated.");
             }
 
             properties.Add(property);
