@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EPPlus.Report.Model;
+using EPPlus.Report.Rendering;
 using OfficeOpenXml;
 using OfficeOpenXml.ConditionalFormatting.Contracts;
 
@@ -404,6 +405,9 @@ public class TemplateParser : ITemplateParser
                     {
                         rule.Formula2 = cfFormula2.Formula2 ?? string.Empty;
                     }
+
+                    // Extract full style properties from the EPPlus rule
+                    ConditionalFormattingCloner.Extract(cf, rule);
 
                     switch (node)
                     {

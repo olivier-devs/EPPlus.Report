@@ -832,16 +832,12 @@ public class TemplateRenderer : ITemplateRenderer
             return; // block was deleted
         }
 
-        // Re-apply rules to the final range
+        // Re-apply rules to the final range with full style cloning
         foreach (var rule in rules)
         {
             var newAddress = worksheet.Cells[finalStartRow, 1, finalEndRow, worksheet.Dimension?.End.Column ?? 1]
                 .Address;
-            var cf = worksheet.ConditionalFormatting.AddExpression(newAddress);
-            cf.Formula = rule.Formula;
-            cf.Style.Fill.BackgroundColor.Color = Color.Red; // placeholder
-            cf.Priority = rule.Priority;
-            cf.StopIfTrue = rule.StopIfTrue;
+            ConditionalFormattingCloner.Apply(rule, worksheet, newAddress);
         }
     }
 
