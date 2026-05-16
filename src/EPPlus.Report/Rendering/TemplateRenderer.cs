@@ -872,6 +872,42 @@ public class TemplateRenderer : ITemplateRenderer
 
             throw;
         }
+        catch (TemplateExpressionNotAllowedException ex)
+        {
+            // Security violations are errors, not warnings — they indicate an attempt
+            // to access a property that is not in the allowlist.
+            if (_renderingErrors != null)
+            {
+                _renderingErrors.Add(new TemplateError
+                {
+                    Message = ex.Message,
+                    Type = ErrorType.Evaluation,
+                    WorksheetName = worksheet.Name,
+                    Row = row,
+                    Column = column,
+                    CellAddress = cellAddress,
+                    Expression = expression
+                });
+                return null;
+            }
+
+            if (_warnings != null)
+            {
+                _warnings.Add(new TemplateError
+                {
+                    Message = ex.Message,
+                    Type = ErrorType.Warning,
+                    WorksheetName = worksheet.Name,
+                    Row = row,
+                    Column = column,
+                    CellAddress = cellAddress,
+                    Expression = expression
+                });
+                return null;
+            }
+
+            throw;
+        }
         catch (Exception ex) when (ex is ArgumentException || ex is NullReferenceException ||
                                    ex is InvalidOperationException)
         {

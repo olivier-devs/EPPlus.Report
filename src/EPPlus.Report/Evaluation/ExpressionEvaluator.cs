@@ -14,6 +14,13 @@ public class ExpressionEvaluator : IExpressionEvaluator
     private readonly ConcurrentDictionary<string, Func<object, object>> _functions = new();
 
     /// <summary>
+    ///     Gets or sets the set of allowed property expression paths.
+    ///     When set, only expressions contained in this set will be evaluated.
+    ///     If null or empty, all public properties are accessible (default behavior).
+    /// </summary>
+    public HashSet<string> AllowedProperties { get; set; }
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="ExpressionEvaluator" /> class
     ///     with built-in functions (Upper, Lower, Trim).
     /// </summary>
@@ -90,6 +97,12 @@ public class ExpressionEvaluator : IExpressionEvaluator
         if (string.IsNullOrWhiteSpace(expression))
         {
             throw new ArgumentException("Expression cannot be empty", nameof(expression));
+        }
+
+        var trimmedExpression = expression.Trim();
+        if (AllowedProperties != null && AllowedProperties.Count > 0 && !AllowedProperties.Contains(trimmedExpression))
+        {
+            throw new TemplateExpressionNotAllowedException($"Expression '{trimmedExpression}' is not in the allowed properties list.");
         }
 
         var cacheKey = $"{context.GetType().FullName}:{expression}";
