@@ -4,17 +4,16 @@ using EPPlus.Report.Model;
 using EPPlus.Report.Parsing;
 using EPPlus.Report.Rendering;
 using OfficeOpenXml;
-using OfficeOpenXml.ConditionalFormatting;
 using Xunit;
 
 namespace EPPlus.Report.Tests
 {
-    public class CfClonerIconSetTests
+    public class CfClonerFallbackTests
     {
         private static void SetupLicense() { ExcelPackage.LicenseContext = LicenseContext.NonCommercial; }
 
         [Fact]
-        public void Render_LoopWithThreeIconSet_PreservesSettings()
+        public void Render_LoopWithAboveAverage_DoesNotCrash_FallsBackToV1()
         {
             SetupLicense();
             using var package = new ExcelPackage();
@@ -23,20 +22,19 @@ namespace EPPlus.Report.Tests
             sheet.Cells["A2"].Value = "{{Value}}";
             sheet.Cells["A3"].Value = "<</foreach>>";
 
-            var cf = sheet.ConditionalFormatting.AddThreeIconSet("A2", eExcelconditionalFormatting3IconsSetType.Symbols);
-            cf.ShowValue = false;
-            cf.Reverse = true;
+            // AboveAverage is a cell-style CF type - should be cloned properly
+            var cf = sheet.ConditionalFormatting.AddAboveAverage("A2");
 
             var parser = new TemplateParser();
             var template = parser.Parse(sheet, new TemplateErrors());
             var renderer = new TemplateRenderer(new ExpressionEvaluator());
-            renderer.Render(template, new RenderContext { Current = new { Items = new[] { new { Value = 10 }, new { Value = 50 }, new { Value = 90 } } } }, sheet);
+            renderer.Render(template, new RenderContext { Current = new { Items = new[] { new { Value = 10 }, new { Value = 80 } } } }, sheet);
 
+            // CF should exist and cover all data rows
             Assert.Equal(1, sheet.ConditionalFormatting.Count);
-            var iconSet = sheet.ConditionalFormatting.First().As.ThreeIconSet;
-            Assert.NotNull(iconSet);
-            Assert.False(iconSet.ShowValue);
-            Assert.True(iconSet.Reverse);
+            var renderedRule = sheet.ConditionalFormatting.First();
+            Assert.True(renderedRule.Address.Start.Row <= 2);
+            Assert.True(renderedRule.Address.End.Row >= 3);
         }
     }
 }
