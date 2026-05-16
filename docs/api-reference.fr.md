@@ -232,8 +232,11 @@ Options pour les opérations de sauvegarde.
 | Propriété | Type | Défaut | Description |
 |-----------|------|--------|-------------|
 | `EvaluateFormulasBeforeSave` | `bool` | `false` | Si `true`, évalue les formules juste avant l'écriture sur disque/stream. |
+| `Password` | `string?` | `null` | Si non-null et non-vide, chiffre le fichier de sortie avec AES-256. |
 
 > **Note :** Si `GenerateOptions.EvaluateFormulas` était déjà `true`, les formules ne sont pas réévaluées pendant la sauvegarde.
+
+> **Note (Mot de passe) :** Lors d'une sauvegarde vers un `Stream`, une `NotSupportedException` est levée car EPPlus ne supporte pas le chiffrement avec les streams. Le mot de passe est stocké en clair en mémoire (aligné avec le comportement d'EPPlus).
 
 ---
 

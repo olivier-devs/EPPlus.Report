@@ -232,8 +232,11 @@ Options for save operations.
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `EvaluateFormulasBeforeSave` | `bool` | `false` | If `true`, evaluates formulas just before writing to disk/stream. |
+| `Password` | `string?` | `null` | If non-null and non-empty, encrypts the output file with AES-256. |
 
 > **Note:** If `GenerateOptions.EvaluateFormulas` was already `true`, formulas are not re-evaluated during save.
+
+> **Note (Password):** When saving to a `Stream`, a `NotSupportedException` is thrown because EPPlus does not support encryption with streams. The password is stored in plain text in memory (aligned with EPPlus behavior).
 
 ---
 

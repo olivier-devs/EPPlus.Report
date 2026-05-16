@@ -18,8 +18,9 @@ Step-by-step guide with practical examples.
 10. [Formula Evaluation](#formula-evaluation)
 11. [Working with Streams](#working-with-streams)
 12. [Conditional Formatting with Style Preservation](#conditional-formatting-with-style-preservation)
-13. [Error Handling](#error-handling)
-14. [ASP.NET Core Example](#aspnet-core-example)
+13. [Password-Protected Workbooks](#password-protected-workbooks)
+14. [Error Handling](#error-handling)
+15. [ASP.NET Core Example](#aspnet-core-example)
 
 ---
 
@@ -509,6 +510,52 @@ engine.AddVariable("items", items);
 var result = engine.Generate();
 engine.SaveAs("output.xlsx");
 ```
+
+---
+
+## Password-Protected Workbooks
+
+Encrypt generated Excel files with a password for secure storage and sharing.
+
+### Basic Usage
+
+```csharp
+var engine = new TemplateEngine("template.xlsx");
+engine.AddVariable(data);
+var result = engine.Generate();
+
+// Encrypt with AES-256
+engine.SaveAs("protected_output.xlsx", new SaveOptions { Password = "MyP@ssw0rd!" });
+```
+
+### Combined with Formula Evaluation
+
+```csharp
+var engine = new TemplateEngine("template.xlsx");
+engine.AddVariable(data);
+var result = engine.Generate();
+
+engine.SaveAs("protected_output.xlsx", new SaveOptions 
+{ 
+    Password = "MyP@ssw0rd!",
+    EvaluateFormulasBeforeSave = true 
+});
+```
+
+### Behavior
+
+| Password value | Behavior |
+|----------------|----------|
+| `null` or empty | No encryption (default) |
+| Non-empty string | AES-256 encryption |
+
+### Limitations
+
+- **Stream output is not supported.** If you call `SaveAs(stream, new SaveOptions { Password = "..." })`, a `NotSupportedException` is thrown because EPPlus does not support encryption when writing to streams.
+
+### Security Considerations
+
+> **Warning:** The password is stored in plain text in memory during the save operation. This is aligned with EPPlus's own behavior. For highly sensitive data, consider additional encryption layers at the application or storage level.
 
 ---
 

@@ -18,8 +18,9 @@ Guide pas à pas avec des exemples pratiques.
 10. [Évaluation des formules](#évaluation-des-formules)
 11. [Travail avec les streams](#travail-avec-les-streams)
 12. [Mise en forme conditionnelle avec préservation des styles](#mise-en-forme-conditionnelle-avec-préservation-des-styles)
-13. [Gestion des erreurs](#gestion-des-erreurs)
-14. [Exemple ASP.NET Core](#exemple-aspnet-core)
+13. [Classeurs protégés par mot de passe](#classeurs-protégés-par-mot-de-passe)
+14. [Gestion des erreurs](#gestion-des-erreurs)
+15. [Exemple ASP.NET Core](#exemple-aspnet-core)
 
 ---
 
@@ -509,6 +510,52 @@ engine.AddVariable("items", items);
 var result = engine.Generate();
 engine.SaveAs("output.xlsx");
 ```
+
+---
+
+## Classeurs protégés par mot de passe
+
+Chiffrez les fichiers Excel générés avec un mot de passe pour un stockage et partage sécurisé.
+
+### Utilisation basique
+
+```csharp
+var engine = new TemplateEngine("template.xlsx");
+engine.AddVariable(data);
+var result = engine.Generate();
+
+// Chiffrement AES-256
+engine.SaveAs("output_protege.xlsx", new SaveOptions { Password = "MonM0tDeP@ss!" });
+```
+
+### Combinaison avec l'évaluation des formules
+
+```csharp
+var engine = new TemplateEngine("template.xlsx");
+engine.AddVariable(data);
+var result = engine.Generate();
+
+engine.SaveAs("output_protege.xlsx", new SaveOptions 
+{ 
+    Password = "MonM0tDeP@ss!",
+    EvaluateFormulasBeforeSave = true 
+});
+```
+
+### Comportement
+
+| Valeur du mot de passe | Comportement |
+|------------------------|--------------|
+| `null` ou vide | Pas de chiffrement (défaut) |
+| Chaîne non vide | Chiffrement AES-256 |
+
+### Limitations
+
+- **La sortie vers un Stream n'est pas supportée.** Si vous appelez `SaveAs(stream, new SaveOptions { Password = "..." })`, une `NotSupportedException` est levée car EPPlus ne supporte pas le chiffrement lors de l'écriture dans un stream.
+
+### Considérations de sécurité
+
+> **Attention :** Le mot de passe est stocké en clair en mémoire pendant l'opération de sauvegarde. Ceci est aligné avec le comportement d'EPPlus. Pour les données hautement sensibles, envisagez des couches de chiffrement supplémentaires au niveau de l'application ou du stockage.
 
 ---
 

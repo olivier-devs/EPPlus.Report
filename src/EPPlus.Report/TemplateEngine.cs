@@ -232,7 +232,11 @@ public class TemplateEngine : IDisposable
     public void SaveAs(string path, SaveOptions saveOptions)
     {
         ApplySaveOptions(saveOptions);
-        _package.SaveAs(new FileInfo(path));
+        var password = saveOptions?.Password;
+        if (!string.IsNullOrWhiteSpace(password))
+            _package.SaveAs(new FileInfo(path), password);
+        else
+            _package.SaveAs(new FileInfo(path));
     }
 
     /// <summary>
@@ -243,7 +247,11 @@ public class TemplateEngine : IDisposable
     public void SaveAs(FileInfo fileInfo, SaveOptions saveOptions)
     {
         ApplySaveOptions(saveOptions);
-        _package.SaveAs(fileInfo);
+        var password = saveOptions?.Password;
+        if (!string.IsNullOrWhiteSpace(password))
+            _package.SaveAs(fileInfo, password);
+        else
+            _package.SaveAs(fileInfo);
     }
 
     /// <summary>
@@ -254,6 +262,11 @@ public class TemplateEngine : IDisposable
     public void SaveAs(Stream stream, SaveOptions saveOptions)
     {
         ApplySaveOptions(saveOptions);
+        var password = saveOptions?.Password;
+        if (!string.IsNullOrWhiteSpace(password))
+            throw new NotSupportedException(
+                "Password-protected workbooks cannot be saved to a Stream. " +
+                "Use SaveAs(string) or SaveAs(FileInfo) instead.");
         _package.SaveAs(stream);
     }
 
