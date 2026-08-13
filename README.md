@@ -2,7 +2,7 @@
 
 Template engine for Excel reports using EPPlus.
 
-[![CI](https://github.com/olivier-devs/EPPlus.Report/actions/workflows/ci.yml/badge.svg)](https://github.com/olivier-devs/EPPlus.Report/actions/workflows/ci.yml) [![NuGet](https://img.shields.io/nuget/v/EPPlus.Report.svg)](https://www.nuget.org/packages/EPPlus.Report/)
+[![CI](https://github.com/olivier-devs/EPPlus.Report/actions/workflows/ci.yaml/badge.svg)](https://github.com/olivier-devs/EPPlus.Report/actions/workflows/ci.yaml) [![NuGet](https://img.shields.io/nuget/v/EPPlus.Report.svg)](https://www.nuget.org/packages/EPPlus.Report/)
 
 ## Installation
 
