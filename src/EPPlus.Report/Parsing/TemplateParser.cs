@@ -363,20 +363,35 @@ public class TemplateParser : ITemplateParser
     {
         foreach (var node in template.Nodes)
         {
-            var startRow = node.Row;
-            var endRow = node.Row;
+            int startRow, endRow, startColumn, endColumn;
 
-            if (node is GroupNode group)
+            if (node is NamedRangeLoopNode namedRangeLoop)
             {
+                startRow = namedRangeLoop.Row;
+                endRow = namedRangeLoop.EndRow;
+                startColumn = namedRangeLoop.Column;
+                endColumn = namedRangeLoop.EndColumn;
+            }
+            else if (node is GroupNode group)
+            {
+                startRow = group.Row;
                 endRow = group.EndRow;
+                startColumn = group.Column;
+                endColumn = group.Column;
             }
             else if (node is IfNode ifNode)
             {
+                startRow = ifNode.Row;
                 endRow = ifNode.EndRow;
+                startColumn = ifNode.Column;
+                endColumn = ifNode.Column;
             }
             else if (node is LoopNode loop)
             {
+                startRow = loop.Row;
                 endRow = loop.EndRow;
+                startColumn = loop.Column;
+                endColumn = loop.Column;
             }
             else
             {
@@ -386,35 +401,43 @@ public class TemplateParser : ITemplateParser
             foreach (var cf in worksheet.ConditionalFormatting)
             {
                 var cfAddress = cf.Address;
-                if (cfAddress.Start.Row <= endRow && cfAddress.End.Row >= startRow)
+                var intersectsRows = cfAddress.Start.Row <= endRow && cfAddress.End.Row >= startRow;
+                var intersectsColumns = cfAddress.Start.Column <= endColumn && cfAddress.End.Column >= startColumn;
+                if (!intersectsRows || !intersectsColumns)
                 {
-                    var rule = new ConditionalFormattingRule
-                    {
-                        Address = cf.Address.Address,
-                        Type = cf.Type,
-                        Priority = cf.Priority,
-                        StopIfTrue = cf.StopIfTrue
-                    };
+                    continue;
+                }
 
-                    if (cf is IExcelConditionalFormattingWithFormula cfFormula)
-                    {
-                        rule.Formula = cfFormula.Formula ?? string.Empty;
-                    }
+                var rule = new ConditionalFormattingRule
+                {
+                    Address = cf.Address.Address,
+                    Type = cf.Type,
+                    Priority = cf.Priority,
+                    StopIfTrue = cf.StopIfTrue,
+                    TemplateStartRow = startRow,
+                    TemplateEndRow = endRow,
+                    TemplateStartColumn = startColumn,
+                    TemplateEndColumn = endColumn
+                };
 
-                    if (cf is IExcelConditionalFormattingWithFormula2 cfFormula2)
-                    {
-                        rule.Formula2 = cfFormula2.Formula2 ?? string.Empty;
-                    }
+                if (cf is IExcelConditionalFormattingWithFormula cfFormula)
+                {
+                    rule.Formula = cfFormula.Formula ?? string.Empty;
+                }
 
-                    // Extract full style properties from the EPPlus rule
-                    ConditionalFormattingCloner.Extract(cf, rule);
+                if (cf is IExcelConditionalFormattingWithFormula2 cfFormula2)
+                {
+                    rule.Formula2 = cfFormula2.Formula2 ?? string.Empty;
+                }
 
-                    switch (node)
-                    {
-                        case GroupNode gn: gn.ConditionalFormattingRules.Add(rule); break;
-                        case IfNode @in: @in.ConditionalFormattingRules.Add(rule); break;
-                        case LoopNode ln: ln.ConditionalFormattingRules.Add(rule); break;
-                    }
+                // Extract full style properties from the EPPlus rule
+                ConditionalFormattingCloner.Extract(cf, rule);
+
+                switch (node)
+                {
+                    case GroupNode gn: gn.ConditionalFormattingRules.Add(rule); break;
+                    case IfNode @in: @in.ConditionalFormattingRules.Add(rule); break;
+                    case LoopNode ln: ln.ConditionalFormattingRules.Add(rule); break;
                 }
             }
         }
