@@ -7,6 +7,6 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="EPPlus" Version="7.2.1" />
+    <PackageReference Include="EPPlus" Version="7.5.3" />
   </ItemGroup>
 </Project>
