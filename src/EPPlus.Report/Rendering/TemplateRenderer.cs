@@ -148,6 +148,8 @@ public class TemplateRenderer : ITemplateRenderer
         {
             _tracker?.RecordDelete(worksheet, blockStartRow, loopNode.EndRow - loopNode.Row + 1);
             worksheet.DeleteRow(blockStartRow, loopNode.EndRow - loopNode.Row + 1);
+            ReconcileConditionalFormatting(loopNode.ConditionalFormattingRules, blockStartRow, blockStartRow - 1,
+                worksheet);
             return rowOffset - (loopNode.EndRow - loopNode.Row + 1);
         }
 
@@ -231,6 +233,8 @@ public class TemplateRenderer : ITemplateRenderer
         {
             _tracker?.RecordDelete(worksheet, blockStartRow, loopNode.EndRow - loopNode.Row + 1);
             worksheet.DeleteRow(blockStartRow, loopNode.EndRow - loopNode.Row + 1);
+            ReconcileConditionalFormatting(loopNode.ConditionalFormattingRules, blockStartRow, blockStartRow - 1,
+                worksheet);
             return rowOffset - (loopNode.EndRow - loopNode.Row + 1);
         }
 
@@ -360,6 +364,8 @@ public class TemplateRenderer : ITemplateRenderer
         {
             _tracker?.RecordDelete(worksheet, blockStartRow, loopNode.EndRow - loopNode.Row + 1);
             worksheet.DeleteRow(blockStartRow, loopNode.EndRow - loopNode.Row + 1);
+            ReconcileConditionalFormatting(loopNode.ConditionalFormattingRules, blockStartRow, blockStartRow - 1,
+                worksheet);
             return rowOffset - (loopNode.EndRow - loopNode.Row + 1);
         }
 
@@ -632,6 +638,8 @@ public class TemplateRenderer : ITemplateRenderer
         {
             _tracker?.RecordDelete(worksheet, blockStartRow, groupNode.EndRow - groupNode.Row + 1);
             worksheet.DeleteRow(blockStartRow, groupNode.EndRow - groupNode.Row + 1);
+            ReconcileConditionalFormatting(groupNode.ConditionalFormattingRules, blockStartRow, blockStartRow - 1,
+                worksheet);
             return rowOffset - (groupNode.EndRow - groupNode.Row + 1);
         }
 
