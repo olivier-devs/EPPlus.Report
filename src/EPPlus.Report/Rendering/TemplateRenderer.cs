@@ -192,7 +192,7 @@ public class TemplateRenderer : ITemplateRenderer
         }
 
         ReconcileConditionalFormatting(loopNode.ConditionalFormattingRules, loopNode.Row + rowOffset,
-            loopNode.EndRow + rowOffset, loopNode.Row + rowOffset, loopNode.EndRow + currentOffset, worksheet);
+            loopNode.EndRow + currentOffset, worksheet);
         return currentOffset;
     }
 
@@ -321,7 +321,7 @@ public class TemplateRenderer : ITemplateRenderer
         }
 
         ReconcileConditionalFormatting(loopNode.ConditionalFormattingRules, loopNode.Row + rowOffset,
-            loopNode.EndRow + rowOffset, loopNode.Row + rowOffset, loopNode.EndRow + currentOffset, worksheet);
+            loopNode.EndRow + currentOffset, worksheet);
         return currentOffset;
     }
 
@@ -481,7 +481,7 @@ public class TemplateRenderer : ITemplateRenderer
         }
 
         ReconcileConditionalFormatting(loopNode.ConditionalFormattingRules, loopNode.Row + rowOffset,
-            loopNode.EndRow + rowOffset, loopNode.Row + rowOffset, loopNode.EndRow + currentOffset, worksheet);
+            loopNode.EndRow + currentOffset, worksheet);
         return currentOffset;
     }
 
@@ -596,14 +596,14 @@ public class TemplateRenderer : ITemplateRenderer
             worksheet.Cells[ifNode.EndRow + childOffset, ifNode.Column].Value = null;
 
             ReconcileConditionalFormatting(ifNode.ConditionalFormattingRules, ifNode.Row + rowOffset,
-                ifNode.EndRow + rowOffset, ifNode.Row + rowOffset, ifNode.EndRow + childOffset, worksheet);
+                ifNode.EndRow + childOffset, worksheet);
             return childOffset;
         }
 
         // Remove the entire block including tags
         _tracker?.RecordDelete(worksheet, blockStartRow, ifNode.EndRow - ifNode.Row + 1);
         worksheet.DeleteRow(blockStartRow, ifNode.EndRow - ifNode.Row + 1);
-        ReconcileConditionalFormatting(ifNode.ConditionalFormattingRules, ifNode.Row, ifNode.EndRow, 0, -1, worksheet);
+        ReconcileConditionalFormatting(ifNode.ConditionalFormattingRules, blockStartRow, blockStartRow - 1, worksheet);
         return rowOffset - (ifNode.EndRow - ifNode.Row + 1);
     }
 
@@ -773,7 +773,7 @@ public class TemplateRenderer : ITemplateRenderer
         }
 
         ReconcileConditionalFormatting(groupNode.ConditionalFormattingRules, groupNode.Row + rowOffset,
-            groupNode.EndRow + rowOffset, groupNode.Row + rowOffset, groupNode.EndRow + currentOffset, worksheet);
+            groupNode.EndRow + currentOffset, worksheet);
         return currentOffset;
     }
 
@@ -804,40 +804,126 @@ public class TemplateRenderer : ITemplateRenderer
         return null;
     }
 
-    private static void ReconcileConditionalFormatting(List<ConditionalFormattingRule> rules, int originalStartRow,
-        int originalEndRow, int finalStartRow, int finalEndRow, ExcelWorksheet worksheet)
+    private static void ReconcileConditionalFormatting(
+        List<ConditionalFormattingRule> rules, int blockStartRow, int blockEndRow, ExcelWorksheet worksheet)
     {
         if (rules == null || rules.Count == 0)
         {
             return;
         }
 
-        // Remove old rules that intersected the original block range
-        var rulesToRemove = new List<IExcelConditionalFormattingRule>();
-        foreach (var cf in worksheet.ConditionalFormatting)
+        var blockDeleted = blockEndRow < blockStartRow;
+
+        foreach (var rule in rules)
         {
-            if (cf.Address.Start.Row <= originalEndRow && cf.Address.End.Row >= originalStartRow)
+            ExcelAddress templateAddress;
+            try
             {
-                rulesToRemove.Add(cf);
+                templateAddress = new ExcelAddress(rule.Address);
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (IsFullColumnRange(templateAddress.Start.Row, templateAddress.End.Row))
+            {
+                continue;
+            }
+
+            var templateBlockEnd = blockStartRow + (rule.TemplateEndRow - rule.TemplateStartRow);
+
+            if (blockDeleted)
+            {
+                RemoveRulesMatchingCaptured(worksheet, rule, blockStartRow, templateBlockEnd,
+                    templateAddress.Start.Column, templateAddress.End.Column);
+                continue;
+            }
+
+            var sweepStartRow = Math.Min(blockStartRow, templateBlockEnd);
+            var sweepEndRow = Math.Max(blockEndRow, templateBlockEnd);
+
+            if (HasMatchingLivingRule(worksheet, rule, sweepStartRow, sweepEndRow,
+                    templateAddress.Start.Column, templateAddress.End.Column))
+            {
+                continue;
+            }
+
+            var displacement = blockStartRow - rule.TemplateStartRow;
+            var shiftedAddress = new ExcelAddress(
+                templateAddress.Start.Row + displacement,
+                templateAddress.Start.Column,
+                templateAddress.End.Row + displacement,
+                templateAddress.End.Column);
+            ConditionalFormattingCloner.Apply(rule, worksheet, shiftedAddress.Address);
+        }
+    }
+
+    private static bool IsFullColumnRange(int startRow, int endRow)
+    {
+        return startRow <= 1 && endRow >= ExcelPackage.MaxRows;
+    }
+
+    private static bool HasMatchingLivingRule(ExcelWorksheet worksheet, ConditionalFormattingRule captured,
+        int sweepStartRow, int sweepEndRow, int startColumn, int endColumn)
+    {
+        foreach (var candidate in worksheet.ConditionalFormatting)
+        {
+            if (IsMatchingLivingRule(candidate, captured, sweepStartRow, sweepEndRow, startColumn, endColumn))
+            {
+                return true;
             }
         }
 
-        foreach (var cf in rulesToRemove)
+        return false;
+    }
+
+    private static bool IsMatchingLivingRule(IExcelConditionalFormattingRule candidate,
+        ConditionalFormattingRule captured, int sweepStartRow, int sweepEndRow, int startColumn, int endColumn)
+    {
+        if (candidate.Type != captured.Type || candidate.Priority != captured.Priority)
         {
-            worksheet.ConditionalFormatting.Remove(cf);
+            return false;
         }
 
-        if (finalEndRow < finalStartRow)
+        if (candidate.Address.Start.Column != startColumn || candidate.Address.End.Column != endColumn)
         {
-            return; // block was deleted
+            return false;
         }
 
-        // Re-apply rules to the final range with full style cloning
-        foreach (var rule in rules)
+        if (candidate.Address.End.Row < sweepStartRow || candidate.Address.Start.Row > sweepEndRow)
         {
-            var newAddress = worksheet.Cells[finalStartRow, 1, finalEndRow, worksheet.Dimension?.End.Column ?? 1]
-                .Address;
-            ConditionalFormattingCloner.Apply(rule, worksheet, newAddress);
+            return false;
+        }
+
+        return GetRuleFormula(candidate) == captured.Formula && GetRuleFormula2(candidate) == captured.Formula2;
+    }
+
+    private static string GetRuleFormula(IExcelConditionalFormattingRule rule)
+    {
+        return rule is IExcelConditionalFormattingWithFormula formula ? formula.Formula ?? string.Empty : string.Empty;
+    }
+
+    private static string GetRuleFormula2(IExcelConditionalFormattingRule rule)
+    {
+        return rule is IExcelConditionalFormattingWithFormula2 formula ? formula.Formula2 ?? string.Empty : string.Empty;
+    }
+
+    private static void RemoveRulesMatchingCaptured(ExcelWorksheet worksheet, ConditionalFormattingRule captured,
+        int spanStartRow, int spanEndRow, int startColumn, int endColumn)
+    {
+        var toRemove = new List<IExcelConditionalFormattingRule>();
+        foreach (var candidate in worksheet.ConditionalFormatting)
+        {
+            if (IsMatchingLivingRule(candidate, captured, spanStartRow, spanEndRow, startColumn, endColumn))
+            {
+                toRemove.Add(candidate);
+            }
+        }
+
+        foreach (var candidate in toRemove)
+        {
+            worksheet.ConditionalFormatting.Remove(candidate);
         }
     }
 
