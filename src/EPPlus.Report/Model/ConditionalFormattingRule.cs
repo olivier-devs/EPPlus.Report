@@ -73,4 +73,24 @@ public class ConditionalFormattingRule
     ///     Null when the rule type is not an icon set.
     /// </summary>
     public CfIconSetSettings IconSetSettings { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the first row of the template block this rule belongs to.
+    /// </summary>
+    public int TemplateStartRow { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the last row of the template block this rule belongs to.
+    /// </summary>
+    public int TemplateEndRow { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the first column of the template block this rule belongs to.
+    /// </summary>
+    public int TemplateStartColumn { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the last column of the template block this rule belongs to.
+    /// </summary>
+    public int TemplateEndColumn { get; set; }
 }
