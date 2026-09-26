@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using EPPlus.Report.Evaluation;
+using EPPlus.Report.Formatting;
 using EPPlus.Report.Model;
 using OfficeOpenXml;
 using OfficeOpenXml.ConditionalFormatting.Contracts;

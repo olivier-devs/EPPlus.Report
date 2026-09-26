@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using EPPlus.Report.Formatting;
 using EPPlus.Report.Model;
-using EPPlus.Report.Rendering;
 using OfficeOpenXml;
 using OfficeOpenXml.ConditionalFormatting.Contracts;
 

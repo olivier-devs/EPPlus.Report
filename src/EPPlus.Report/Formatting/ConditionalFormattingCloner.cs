@@ -8,7 +8,7 @@ using OfficeOpenXml.ConditionalFormatting.Contracts;
 using OfficeOpenXml.Style;
 using OfficeOpenXml.Style.Dxf;
 
-namespace EPPlus.Report.Rendering;
+namespace EPPlus.Report.Formatting;
 
 /// <summary>
 ///     Extracts and applies conditional formatting style properties between EPPlus rules and <see cref="ConditionalFormattingRule" /> DTOs.
