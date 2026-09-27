@@ -216,5 +216,52 @@ namespace EPPlus.Report.Tests
             Assert.True(rule.Address.End.Row >= 14, "CF should cover the final block rows");
             Assert.Equal(Color.Red.ToArgb(), rule.Style.Fill.BackgroundColor.Color?.ToArgb());
         }
+
+        // Cas 5 : CF partiellement extérieure — coordonnées réelles préservées, jamais remplacées
+        [Fact]
+        public void Render_NamedRangeLoopWithPartiallyOutsideCF_PreservesRealColumns()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            BuildNamedRangeTemplate(sheet);
+            var cf = sheet.ConditionalFormatting.AddExpression("E10:H12");
+            cf.Formula = "E11>100";
+
+            var parser = new TemplateParser();
+            var template = parser.Parse(sheet, new TemplateErrors());
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            renderer.Render(template, new RenderContext { Current = new { Items } }, sheet);
+
+            var rule = Assert.Single(sheet.ConditionalFormatting);
+            Assert.Equal(5, rule.Address.Start.Column);
+            Assert.Equal(8, rule.Address.End.Column);
+            Assert.True(rule.Address.Start.Row <= 10, "CF should start at or before the block start row");
+            Assert.True(rule.Address.End.Row >= 16, "CF should cover the final block rows");
+        }
+
+        // Raffinement : D1:D1000 est une plage finie réconciliable, distincte du passthrough D:D
+        [Fact]
+        public void Render_NamedRangeLoopWithFiniteRangeCF_ExtendsUnlikeWholeColumn()
+        {
+            SetupLicense();
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Test");
+            BuildNamedRangeTemplate(sheet);
+            var cf = sheet.ConditionalFormatting.AddExpression("D1:D1000");
+            cf.Formula = "D11>100";
+
+            var parser = new TemplateParser();
+            var template = parser.Parse(sheet, new TemplateErrors());
+            var renderer = new TemplateRenderer(new ExpressionEvaluator());
+            renderer.Render(template, new RenderContext { Current = new { Items } }, sheet);
+
+            var rule = Assert.Single(sheet.ConditionalFormatting);
+            Assert.Equal(4, rule.Address.Start.Column);
+            Assert.Equal(4, rule.Address.End.Column);
+            Assert.Equal(1, rule.Address.Start.Row);
+            Assert.True(rule.Address.End.Row >= 1001,
+                "Finite range must follow the block extension instead of staying untouched like D:D");
+        }
     }
 }
