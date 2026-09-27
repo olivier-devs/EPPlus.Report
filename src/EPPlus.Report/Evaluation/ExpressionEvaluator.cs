@@ -79,6 +79,91 @@ public class ExpressionEvaluator : IExpressionEvaluator
     }
 
     /// <summary>
+    ///     Determines whether a root-level reference (a whole variable, <c>item</c>, or <c>items</c> object)
+    ///     may be rendered when an allowlist is active.
+    ///     Terminal values (strings, numbers, dates, GUIDs) are always safe to render;
+    ///     complex objects are denied because their full contents cannot be verified
+    ///     against the property allowlist.
+    /// </summary>
+    /// <param name="value">The resolved root value to check.</param>
+    /// <returns>True when the value may be rendered; false when the active allowlist denies it.</returns>
+    public bool IsRootReferenceAllowed(object value)
+    {
+        if (value == null || AllowedProperties == null || AllowedProperties.Count == 0)
+        {
+            return true;
+        }
+
+        return IsTerminalType(value.GetType());
+    }
+
+    /// <summary>
+    ///     Evaluates the specified expression against the provided context object without checking the allowlist.
+    ///     Used internally for collection resolution in loop rendering where the collection name itself
+    ///     should not be subject to property allowlist restrictions.
+    /// </summary>
+    /// <param name="expression">The expression to evaluate, such as a property path.</param>
+    /// <param name="context">The object against which the expression is evaluated.</param>
+    /// <returns>The result of the evaluation.</returns>
+    public object EvaluateWithoutAllowlist(string expression, object context)
+    {
+        return EvaluateWithoutAllowlist(expression, context, string.Empty);
+    }
+
+    /// <summary>
+    ///     Evaluates the specified expression against the provided context object without checking the allowlist.
+    ///     Used internally for collection resolution in loop rendering where the collection name itself
+    ///     should not be subject to property allowlist restrictions.
+    /// </summary>
+    /// <param name="expression">The expression to evaluate, such as a property path.</param>
+    /// <param name="context">The object against which the expression is evaluated.</param>
+    /// <param name="functionName">The optional function name to apply to the result.</param>
+    /// <returns>The result of the evaluation.</returns>
+    public object EvaluateWithoutAllowlist(string expression, object context, string functionName)
+    {
+        if (context == null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            throw new ArgumentException("Expression cannot be empty", nameof(expression));
+        }
+
+        var trimmedExpression = expression.Trim();
+        var cacheKey = $"{context.GetType().FullName}:{trimmedExpression}";
+        if (!_cache.TryGetValue(cacheKey, out var properties))
+        {
+            properties = CompileExpression(trimmedExpression, context.GetType());
+            _cache[cacheKey] = properties;
+        }
+
+        var current = context;
+        foreach (var property in properties)
+        {
+            if (current == null)
+            {
+                return null;
+            }
+
+            current = property.GetValue(current);
+        }
+
+        if (!string.IsNullOrEmpty(functionName))
+        {
+            if (!_functions.TryGetValue(functionName, out var func))
+            {
+                throw new ArgumentException($"Function '{functionName}' is not registered", nameof(functionName));
+            }
+
+            current = func(current);
+        }
+
+        return current;
+    }
+
+    /// <summary>
     ///     Evaluates the specified expression against the provided context object and optionally applies a function.
     /// </summary>
     /// <param name="expression">The expression to evaluate, such as a property path.</param>

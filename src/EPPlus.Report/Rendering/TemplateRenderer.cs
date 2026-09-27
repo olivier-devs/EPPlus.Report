@@ -70,24 +70,28 @@ public class TemplateRenderer : ITemplateRenderer
                 var targetRow = exprNode.Row + rowOffset;
                 var targetCol = exprNode.Column;
                 var cellAddress = worksheet.Cells[targetRow, targetCol].Address;
+                var rootReferenceDenied = false;
 
                 if (context.Variables != null &&
                     context.Variables.TryGetValue(exprNode.ExpressionPath, out var varValue))
                 {
-                    value = varValue;
+                    value = AllowRootReference(varValue, exprNode, worksheet, targetRow, targetCol, cellAddress);
+                    rootReferenceDenied = value == null && varValue != null;
                 }
                 else if (context.IsNamedRangeLoop)
                 {
-                    value = ResolveNamedRangeExpression(exprNode.ExpressionPath, context, worksheet, targetRow,
+                    var resolved = ResolveNamedRangeExpression(exprNode.ExpressionPath, context, worksheet, targetRow,
                         targetCol, cellAddress);
+                    value = AllowRootReference(resolved, exprNode, worksheet, targetRow, targetCol, cellAddress);
+                    rootReferenceDenied = value == null && resolved != null;
                 }
 
-                if (value == null)
+                if (value == null && !rootReferenceDenied)
                 {
                     value = TryEvaluate(exprNode.ExpressionPath, context.Current, worksheet, targetRow, targetCol,
                         cellAddress, exprNode.FunctionName);
                 }
-                else if (!string.IsNullOrEmpty(exprNode.FunctionName))
+                else if (value != null && !string.IsNullOrEmpty(exprNode.FunctionName))
                 {
                     value = ApplyFunction(exprNode.FunctionName, value, worksheet, targetRow, targetCol, cellAddress);
                 }
@@ -137,7 +141,7 @@ public class TemplateRenderer : ITemplateRenderer
         else if (context.Current != null)
         {
             collection = TryEvaluate(loopNode.CollectionName, context.Current, worksheet, blockStartRow, blockStartCol,
-                blockStartAddress) as IEnumerable;
+                blockStartAddress, skipAllowlist: true) as IEnumerable;
         }
 
         var items = collection?.Cast<object>().ToList() ?? [];
@@ -214,7 +218,7 @@ public class TemplateRenderer : ITemplateRenderer
         else if (context.Current != null)
         {
             collection = TryEvaluate(loopNode.CollectionName, context.Current, worksheet, blockStartRow, blockStartCol,
-                blockStartAddress) as IEnumerable;
+                blockStartAddress, skipAllowlist: true) as IEnumerable;
         }
 
         var items = collection?.Cast<object>().ToList() ?? [];
@@ -345,7 +349,7 @@ public class TemplateRenderer : ITemplateRenderer
         else if (context.Current != null)
         {
             collection = TryEvaluate(loopNode.CollectionName, context.Current, worksheet, blockStartRow, blockStartCol,
-                blockStartAddress) as IEnumerable;
+                blockStartAddress, skipAllowlist: true) as IEnumerable;
         }
 
         var items = collection?.Cast<object>().ToList() ?? [];
@@ -628,7 +632,7 @@ public class TemplateRenderer : ITemplateRenderer
         else if (context.Current != null)
         {
             collection = TryEvaluate(groupNode.CollectionName, context.Current, worksheet, blockStartRow, blockStartCol,
-                blockStartAddress) as IEnumerable;
+                blockStartAddress, skipAllowlist: true) as IEnumerable;
         }
 
         var items = collection?.Cast<object>().ToList() ?? [];
@@ -784,6 +788,47 @@ public class TemplateRenderer : ITemplateRenderer
         ReconcileConditionalFormatting(groupNode.ConditionalFormattingRules, groupNode.Row + rowOffset,
             groupNode.EndRow + currentOffset, worksheet);
         return currentOffset;
+    }
+
+    /// <summary>
+    ///     Guards root-level references (whole variables, <c>item</c>, <c>items</c>) against the active allowlist.
+    ///     Complex objects are denied because their full contents cannot be verified against the property
+    ///     allowlist; terminal values and inactive allowlists pass through unchanged. Custom
+    ///     <see cref="IExpressionEvaluator" /> implementations are not guarded — they own their security model.
+    /// </summary>
+    private object AllowRootReference(object value, ExpressionNode exprNode, ExcelWorksheet worksheet,
+        int row, int column, string cellAddress)
+    {
+        if (value == null || _evaluator is not ExpressionEvaluator evaluator || evaluator.IsRootReferenceAllowed(value))
+        {
+            return value;
+        }
+
+        var message = $"Expression '{exprNode.ExpressionPath}' is not in the allowed properties list.";
+        var error = new TemplateError
+        {
+            Message = message,
+            Type = ErrorType.Evaluation,
+            WorksheetName = worksheet.Name,
+            Row = row,
+            Column = column,
+            CellAddress = cellAddress,
+            Expression = exprNode.ExpressionPath
+        };
+
+        if (_renderingErrors != null)
+        {
+            _renderingErrors.Add(error);
+            return null;
+        }
+
+        if (_warnings != null)
+        {
+            _warnings.Add(error);
+            return null;
+        }
+
+        throw new TemplateExpressionNotAllowedException(message);
     }
 
     private object ResolveNamedRangeExpression(string expression, RenderContext context, ExcelWorksheet worksheet,
@@ -980,18 +1025,25 @@ public class TemplateRenderer : ITemplateRenderer
     }
 
     private object TryEvaluate(string expression, object context, ExcelWorksheet worksheet, int row, int column,
-        string cellAddress, string functionName = null)
+        string cellAddress, string functionName = null, bool skipAllowlist = false)
     {
         try
         {
+            if (skipAllowlist && _evaluator is ExpressionEvaluator ee)
+            {
+                return string.IsNullOrEmpty(functionName)
+                    ? ee.EvaluateWithoutAllowlist(expression, context)
+                    : ee.EvaluateWithoutAllowlist(expression, context, functionName);
+            }
+
             if (string.IsNullOrEmpty(functionName))
             {
                 return _evaluator.Evaluate(expression, context);
             }
 
-            if (_evaluator is ExpressionEvaluator ee)
+            if (_evaluator is ExpressionEvaluator evaluatorWithFunctions)
             {
-                return ee.Evaluate(expression, context, functionName);
+                return evaluatorWithFunctions.Evaluate(expression, context, functionName);
             }
 
             throw new InvalidOperationException("Evaluator does not support functions.");
