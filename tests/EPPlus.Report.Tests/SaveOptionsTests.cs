@@ -264,4 +264,76 @@ public class SaveOptionsTests
             File.Delete(outputFile);
         }
     }
+
+    [Fact]
+    public void SaveAs_PurgablePassword_SavesEncryptedWorkbookAndClearsBuffer()
+    {
+        // Arrange
+        var templateFile = CreateSimpleTemplate();
+        var outputFile = Path.GetTempFileName() + ".xlsx";
+        try
+        {
+            var engine = new TemplateEngine(templateFile);
+            engine.AddVariable(new { Name = "PurgableEncrypted" });
+            engine.Generate();
+
+            var password = "PurgableP@ssw0rd!".ToCharArray();
+
+            // Act
+            engine.SaveAs(outputFile, password);
+
+            // Assert — the caller's password buffer should be purged in place
+            Assert.All(password, c => Assert.Equal('\0', c));
+
+            // Assert — opening without password should fail
+            var ex = Assert.Throws<Exception>(() =>
+            {
+                using var pkg = new ExcelPackage(new FileInfo(outputFile));
+                // Accessing workbook forces decryption attempt
+                _ = pkg.Workbook;
+            });
+            Assert.Contains("password", ex.Message.ToLowerInvariant());
+
+            // Assert — opening with correct password should succeed
+            using (var pkg = new ExcelPackage(new FileInfo(outputFile), "PurgableP@ssw0rd!"))
+            {
+                var sheet = pkg.Workbook.Worksheets[0];
+                Assert.Equal("PurgableEncrypted", sheet.Cells["A1"].Value);
+            }
+        }
+        finally
+        {
+            File.Delete(templateFile);
+            File.Delete(outputFile);
+        }
+    }
+
+    [Fact]
+    public void SaveAs_PurgablePassword_EmptyBuffer_SavesWithoutEncryption()
+    {
+        // Arrange
+        var templateFile = CreateSimpleTemplate();
+        var outputFile = Path.GetTempFileName() + ".xlsx";
+        try
+        {
+            var engine = new TemplateEngine(templateFile);
+            engine.AddVariable(new { Name = "PurgableEmpty" });
+            engine.Generate();
+
+            // Act
+            engine.SaveAs(outputFile, new char[0]);
+
+            // Assert — file should be readable without a password
+            using (var pkg = new ExcelPackage(new FileInfo(outputFile)))
+            {
+                var sheet = pkg.Workbook.Worksheets[0];
+                Assert.Equal("PurgableEmpty", sheet.Cells["A1"].Value);
+            }
+        }
+        finally
+        {
+            File.Delete(templateFile);
+            File.Delete(outputFile);
+        }
+    }
 }

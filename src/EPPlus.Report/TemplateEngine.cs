@@ -270,6 +270,67 @@ public class TemplateEngine : IDisposable
         _package.SaveAs(stream);
     }
 
+    /// <summary>
+    ///     Saves the rendered workbook to the specified file path with password encryption,
+    ///     purging the password buffer in place after the save.
+    /// </summary>
+    /// <remarks>
+    ///     <para><b>Purgable overload:</b> the <paramref name="password" /> buffer is cleared in
+    ///     place after the save completes (including when an exception is thrown), so no long-lived
+    ///     plaintext copy needs to remain in caller memory. Callers are expected to pass a buffer
+    ///     they do not need to preserve. A transient copy is still handed to EPPlus, whose API
+    ///     accepts the password as a string.</para>
+    ///     <para>When <paramref name="password" /> is null, empty, or whitespace-only, the workbook
+    ///     is saved without encryption.</para>
+    /// </remarks>
+    /// <param name="path">The destination file path.</param>
+    /// <param name="password">The password buffer, cleared in place after the save.</param>
+    public void SaveAs(string path, char[] password)
+    {
+        SaveAs(new FileInfo(path), password);
+    }
+
+    /// <summary>
+    ///     Saves the rendered workbook to the specified file with password encryption,
+    ///     purging the password buffer in place after the save.
+    /// </summary>
+    /// <remarks>
+    ///     <para><b>Purgable overload:</b> the <paramref name="password" /> buffer is cleared in
+    ///     place after the save completes (including when an exception is thrown), so no long-lived
+    ///     plaintext copy needs to remain in caller memory. Callers are expected to pass a buffer
+    ///     they do not need to preserve. A transient copy is still handed to EPPlus, whose API
+    ///     accepts the password as a string.</para>
+    ///     <para>When <paramref name="password" /> is null, empty, or whitespace-only, the workbook
+    ///     is saved without encryption.</para>
+    /// </remarks>
+    /// <param name="fileInfo">The destination file information.</param>
+    /// <param name="password">The password buffer, cleared in place after the save.</param>
+    public void SaveAs(FileInfo fileInfo, char[] password)
+    {
+        if (password == null || password.Length == 0)
+        {
+            _package.SaveAs(fileInfo);
+            return;
+        }
+
+        var passwordString = new string(password);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(passwordString))
+            {
+                _package.SaveAs(fileInfo);
+            }
+            else
+            {
+                _package.SaveAs(fileInfo, passwordString);
+            }
+        }
+        finally
+        {
+            Array.Clear(password, 0, password.Length);
+        }
+    }
+
     private void ApplySaveOptions(SaveOptions options)
     {
         if (options != null && options.EvaluateFormulasBeforeSave)
